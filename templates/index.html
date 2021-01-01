@@ -114,7 +114,6 @@
 				</section>
 				<!-- Empty section to hold results -->
 				<section id="results">
-					<div id="seed"></div>
 					<div class="cols cols2">
 						<div class="col col1">
 							<section class="text" id="actual-data">
@@ -170,28 +169,33 @@
 		});
 
 		var render_results = function(data) {
-			$("#seed").empty();
 			$("#actual-data").empty();
 			$("#diff-priv-data").empty();
 			if ("Error" in data) {
 				$("#seed").append("<br><p>Error: " + data["Error"] + "</p>");
 			}
 			else {
-				$("#wikidata-based-results").append('<br><h3><a href="https://wikidata.org/wiki/' + data["qid"] + '">' + data["qid"] + '</a> (' + data["name"] + ')</h3>');
-				if (data["results"].length > 0) {
-					$("#wikidata-based-results").append("<ol>");
-					for (var cat in data["results"]) {
-						if (data["results"][cat]["score"] >= 0.5)  {
-							$("#wikidata-based-results").append("<li class='above-threshold'>" + data["results"][cat]["topic"] + " (" + Math.round(data["results"][cat]["score"]*100) + "%)</li>");
-						} else {
-							$("#wikidata-based-results").append("<li class='below-threshold'>" + data["results"][cat]["topic"] + " (" + Math.round(data["results"][cat]["score"]*100) + "%)</li>");
-						}
+				if (data["groundtruth"].length > 0) {
+					$("#actual-data").append("<ol>");
+					for (var r in data["groundtruth"]) {
+						$("#actual-data").append("<li>" + r[0] + " (" + r[1] + " pviews)</li>");
 					}
-					$("#wikidata-based-results").append("</ol>");
+					$("#actual-data").append("</ol>");
 				}
 				else {
-					$("#wikidata-based-results").append("<li><No confident topics predicted.</li>");
+					$("#actual-data").append("<li><No data.</li>");
 				}
+				if (data["diff-priv"].length > 0) {
+					$("#diff-priv-data").append("<ol>");
+					for (var r in data["diff-priv"]) {
+						$("#diff-priv-data").append("<li>" + r[0] + " (" + r[1] + " pviews)</li>");
+					}
+					$("#diff-priv-data").append("</ol>");
+				}
+				else {
+					$("#diff-priv-data").append("<li><No data.</li>");
+				}
+
 			}
 		}
 

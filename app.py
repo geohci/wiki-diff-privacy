@@ -54,7 +54,7 @@ def add_laplace(groundtruth, eps, sensitivity, mincount):
     for r in groundtruth:
         title = r[0]
         views = r[1]
-        dpviews = min(mincount, views + np.random.laplace(sensitivity / eps))
+        dpviews = max(mincount, views + np.random.laplace(sensitivity / eps))
         dp_results.append((title, dpviews))
     return sorted(dp_results, key=lambda x: x[1], reverse=True)
 
