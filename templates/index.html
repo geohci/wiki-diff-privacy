@@ -168,13 +168,17 @@
 				$("#results").append(table_html);
 				for (var article in data["results"]) {
 					var row = {};
-					row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article + "</a>";
+					if (article.length > 50) {
+						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.substring(0, 47).replaceAll('_', ' ') + "...</a>";
+					} else {
+						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.replaceAll('_', ' ') + "</a>";
+					}
 					row['Actual Pviews'] = data["results"][article]["gt-views"];
 					row['Actual Rank'] = data["results"][article]["gt-rank"];
 					row['DP Pviews'] = data["results"][article]["dp-views"];
 					row['DP Rank'] = data["results"][article]["dp-rank"];
 					row['Pviews Diff'] = data["results"][article]["dp-views"] - data["results"][article]["gt-views"];
-					row['Rank Diff'] = data["results"][article]["dp-rank"] - data["results"][article]["gt-rank"];
+					row['Rank Diff'] = data["results"][article]["gt-rank"] - data["results"][article]["dp-rank"];
 					table_data.push(row);
 				}
 				$('#results-table').DataTable( {
