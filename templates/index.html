@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Differential Privacy + Wikipedia Exploration</title>
+	<link rel="shortcut icon" href="./static/favicon.ico">
+	<meta name="viewport" content="width = device-width, initial-scale=1, user-scalable = no" />
+	<link href="https://tools-static.wmflabs.org/fontcdn/css?family=Merriweather:400,400italic,700,700italic&subset=latin" rel="stylesheet" type="text/css">
+	<link href='https://tools-static.wmflabs.org/fontcdn/css?family=Lato:400,400italic,700,700italic&subset=latin' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" href="./static/style.css" />
+</head>
+
+<body>
+	<script type="text/javascript">
+		var body = document.body;
+		body.classList.add('js');
+	</script>
+
+	<div id="origin_bar">
+		<div class="boxwidth--1-1 padded--left padded--right">
+			<a href="https://research.wikimedia.org/" class="origin_title"><img src="./static/Wikimedia-Foundation-logo.svg" alt="Wikimedia Foundation logo" />Wikimedia Research</a>
+		</div>
+	</div>
+
+	<article id="tool_holder">
+		<!-- Header / Start -->
+		<div id="tool_header--holder" class="boxwidth--1-1 padded--left padded--right">
+			<header id="tool_header">
+				<!-- Tool name -->
+				<h1>Differential Privacy + Wikipedia Exploration</h1>
+				<div class="meta">
+					<div class="disclaimer note">
+						<p>No guarantees are made that this tool will be maintained.</p>
+						<p>This is an experimental tool hosted on <a href="https://wikitech.wikimedia.org/wiki/Portal:Toolforge">Toolforge</a>. No additional personal data is collected by this tool per the Cloud Services
+							<a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use" target="_blank" rel="noopener">Terms of Use</a>.</p>
+					</div>
+					<div class="description padded--right">
+						<p>This tool showcases how different approaches to differential privacy might affect top-viewed lists. In reality, this approach would likely be applied to e.g., pageviews by country, but here we use the top-viewed articles in a wiki (public data) as a proxy.</p>
+					</div>
+				</div>
+			</header>
+		</div>
+
+		<div class="separator"></div>
+
+		<main id="tool_main">
+			<section id="wikidata-model" class="boxwidth--1-1 padded--left padded--right">
+				<h2>Top-viewed Articles on a Wikipedia</h2>
+				<section class="text">
+					<p>This tool fetches the top-viewed articles for a given wiki from yesterday. On the left is the actual data -- i.e. accurate counts without any noise added. On the right is the data after differential privacy has been applied (specifically noise drawn from a <a href="https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf#section.3.3">Laplace distribution</a>).</p>
+					<p>You can play around with the different hyperparameters to see how it affects the results. See <a href="https://research.fb.com/blog/2020/06/protecting-privacy-in-facebook-mobility-data-during-the-covid-19-response/">this Facebook blogpost</a> for a good worked example.</p>
+					<p>
+						<b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.
+						<br><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.
+						<br><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated". If this is number of unique devices that viewed an article, it could be set to 1 as a given UA+IP could only contribute at most 1 to the count.
+						<br><b>Min-count</b>: not formally part of differential privacy, but we introduce a minimum number of data points -- i.e. minimum number of pageviews -- to show up on the list. 1 keeps all results; 100 or any number in that magnitude is likely a good choice.
+						<br><br>
+					</p>
+				</section>
+				<section class="form">
+					<form action="#diff-privacy">
+						<div class="cols cols5">
+							<div class="col col1">
+								{% if lang %}
+								<label class="placeholder"><span class="field_name">Language code</span>
+									<input type="text" value="{{lang}}" placeholder="Placeholder text" id="lang"/>
+								</label>
+								{% else %}
+								<label class="placeholder"><span class="field_name">Language code</span>
+									<input type="text" value="" placeholder="Placeholder text" id="lang"/>
+								</label>
+								{% endif %}
+							</div>
+							<div class="col col1">
+								{% if eps %}
+								<label class="placeholder"><span class="field_name">Epsilon</span>
+									<input type="text" value="{{eps}}" placeholder="Placeholder text" id="eps"/>
+								</label>
+								{% else %}
+								<label class="placeholder"><span class="field_name">Epsilon</span>
+									<input type="text" value="" placeholder="Placeholder text" id="eps"/>
+								</label>
+								{% endif %}
+							</div>
+							<div class="col col1">
+								{% if sensitivity %}
+								<label class="placeholder"><span class="field_name">Sensitivity</span>
+									<input type="text" value="{{sensitivity}}" placeholder="Placeholder text" id="sensitivity"/>
+								</label>
+								{% else %}
+								<label class="placeholder"><span class="field_name">Sensitivity</span>
+									<input type="text" value="" placeholder="Placeholder text" id="sensitivity"/>
+								</label>
+								{% endif %}
+							</div>
+							<div class="col col1">
+								{% if mincount %}
+								<label class="placeholder"><span class="field_name">Min-count</span>
+									<input type="text" value="{{mincount}}" placeholder="Placeholder text" id="min-count"/>
+								</label>
+								{% else %}
+								<label class="placeholder"><span class="field_name">Min-count</span>
+									<input type="text" value="" placeholder="Placeholder text" id="min-count"/>
+								</label>
+								{% endif %}
+							</div>
+							<div class="col col1">
+								<span class="field_name"></span>
+								<input type="submit" value="Submit" id="btnSubmit" />
+							</div>
+						</div>
+					</form>
+				</section>
+				<!-- Empty section to hold results -->
+				<section id="results">
+					<div id="seed"></div>
+					<div class="cols cols2">
+						<div class="col col1">
+							<section class="text" id="actual-data">
+								<!-- Empty section to hold results -->
+							</section>
+						</div>
+
+						<div class="col col1">
+							<section class="text" id="diff-priv-data">
+								<!-- Empty section to hold results -->
+							</section>
+						</div>
+					</div>
+				</section>
+			</section>
+		</main>
+	</article>
+
+	<footer id="tool_footer">
+		<div id="tool_footer-in" class="boxwidth--1-1 padded--left padded--right">
+			<p>Experimental tool developed by <span class="tool-author"><a href="https://meta.wikipedia.org/wiki/User:Isaac_(WMF)">Isaac (WMF)</a> as part of <a href="https://research.wikimedia.org/">Wikimedia Research</a></span>.</p>
+			<ul>
+				<li><a href="https://github.com/geohci/wikidata-topic-model-api">View Source</a></li>
+				<li><a href="https://meta.wikimedia.org/wiki/Research:Language-Agnostic_Topic_Classification">Meta</a></li>
+				<li><a href="https://github.com/geohci/wikidata-topic-model-api#license">License</a></li>
+			</ul>
+		</div>
+	</footer>
+
+	<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('form label.placeholder').each(function() {
+				if (!$('input, textarea, select', this).val()) {
+	 				$(this).addClass('off');
+				}
+				$(this).on('focusin', function() {
+					$(this).removeClass('off');
+				});
+				$(this).on('focusout', function() {
+					if (!$('input, textarea, select', this).val()) {
+						$(this).addClass('off');
+					}
+				});
+				$('*[placeholder]', this).attr('placeholder', '');
+			});
+		});
+	</script>
+
+	<script type="text/javascript">
+		$('#btnSubmit').click(function (e) {
+		   e.preventDefault(); queryDiffPrivate();
+		});
+
+		var render_results = function(data) {
+			$("#seed").empty();
+			$("#actual-data").empty();
+			$("#diff-priv-data").empty();
+			if ("Error" in data) {
+				$("#seed").append("<br><p>Error: " + data["Error"] + "</p>");
+			}
+			else {
+				$("#wikidata-based-results").append('<br><h3><a href="https://wikidata.org/wiki/' + data["qid"] + '">' + data["qid"] + '</a> (' + data["name"] + ')</h3>');
+				if (data["results"].length > 0) {
+					$("#wikidata-based-results").append("<ol>");
+					for (var cat in data["results"]) {
+						if (data["results"][cat]["score"] >= 0.5)  {
+							$("#wikidata-based-results").append("<li class='above-threshold'>" + data["results"][cat]["topic"] + " (" + Math.round(data["results"][cat]["score"]*100) + "%)</li>");
+						} else {
+							$("#wikidata-based-results").append("<li class='below-threshold'>" + data["results"][cat]["topic"] + " (" + Math.round(data["results"][cat]["score"]*100) + "%)</li>");
+						}
+					}
+					$("#wikidata-based-results").append("</ol>");
+				}
+				else {
+					$("#wikidata-based-results").append("<li><No confident topics predicted.</li>");
+				}
+			}
+		}
+
+		function queryDiffPrivate() {
+			var queryUrl = "https://diff-privacy.wmflabs.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			$.ajax(queryUrl, {success: render_results.bind(this),
+							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
+							  }
+				  );
+	    }
+	</script>
+
+</body>
+
+</html>
