@@ -34,11 +34,10 @@ def index():
 @app.route('/api/v1/pageviews')
 def pageviews():
     mincount, lang, eps, sensitivity = validate_api_args()
-    groundtruth = get_groundtruth(lang, mincount)
-    diffpriv = add_laplace(groundtruth, eps, sensitivity, mincount)
+    results = get_groundtruth(lang, mincount)
+    add_laplace(results, eps, sensitivity, mincount)
     return jsonify({'params':{'mincount':mincount, 'lang':lang, 'eps':eps, 'sensitivity':sensitivity},
-                    'groundtruth':groundtruth,
-                    'diff-priv':diffpriv})
+                    'results':results})
 
 def get_groundtruth(lang, mincount):
     p = PageviewsClient(user_agent="isaac@wikimedia.org -- diff private toolforge")
@@ -46,17 +45,18 @@ def get_groundtruth(lang, mincount):
                                  access='all-access',
                                  year=None, month=None, day=None,  # defaults to yesterday
                                  limit=50)
-    return [(r['article'], r['views']) for r in groundtruth if r['views'] >= mincount]
+    return {r['article']:{'gt-rank':r['rank'], 'gt-views':r['views']} for r in groundtruth if r['views'] >= mincount}
 
 # Thanks to: https://github.com/Billy1900/Awesome-Differential-Privacy/blob/master/Laplace%26Exponetial/src/laplace_mechanism.py
 def add_laplace(groundtruth, eps, sensitivity, mincount):
-    dp_results = []
-    for r in groundtruth:
-        title = r[0]
-        views = r[1]
-        dpviews = max(mincount, views + np.random.laplace(sensitivity / eps))
-        dp_results.append((title, dpviews))
-    return sorted(dp_results, key=lambda x: x[1], reverse=True)
+    dp_results = {}
+    for title in groundtruth:
+        views = groundtruth[title]['gt-views']
+        dpviews = max(mincount, round(views + np.random.laplace(0, sensitivity / eps)))
+        dp_results[title] = dpviews
+    for dp_rank, title in enumerate(sorted(dp_results, key=dp_results.get, reverse=True), start=1):
+        groundtruth[title]['dp-views'] = dp_results[title]
+        groundtruth[title]['dp-rank'] = dp_rank
 
 def validate_lang(lang):
     return lang in WIKIPEDIA_LANGUAGE_CODES

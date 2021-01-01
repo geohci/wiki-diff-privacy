@@ -8,6 +8,7 @@
 	<meta name="viewport" content="width = device-width, initial-scale=1, user-scalable = no" />
 	<link href="https://tools-static.wmflabs.org/fontcdn/css?family=Merriweather:400,400italic,700,700italic&subset=latin" rel="stylesheet" type="text/css">
 	<link href='https://tools-static.wmflabs.org/fontcdn/css?family=Lato:400,400italic,700,700italic&subset=latin' rel='stylesheet' type='text/css'>
+	<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/datatables/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
 	<link rel="stylesheet" href="./static/style.css" />
 </head>
 
@@ -45,18 +46,15 @@
 		<div class="separator"></div>
 
 		<main id="tool_main">
-			<section id="wikidata-model" class="boxwidth--1-1 padded--left padded--right">
+			<section id="diff-privacy" class="boxwidth--1-1 padded--left padded--right">
 				<h2>Top-viewed Articles on a Wikipedia</h2>
 				<section class="text">
 					<p>This tool fetches the top-viewed articles for a given wiki from yesterday. On the left is the actual data -- i.e. accurate counts without any noise added. On the right is the data after differential privacy has been applied (specifically noise drawn from a <a href="https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf#section.3.3">Laplace distribution</a>).</p>
 					<p>You can play around with the different hyperparameters to see how it affects the results. See <a href="https://research.fb.com/blog/2020/06/protecting-privacy-in-facebook-mobility-data-during-the-covid-19-response/">this Facebook blogpost</a> for a good worked example.</p>
-					<p>
-						<b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.
-						<br><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.
-						<br><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated". If this is number of unique devices that viewed an article, it could be set to 1 as a given UA+IP could only contribute at most 1 to the count.
-						<br><b>Min-count</b>: not formally part of differential privacy, but we introduce a minimum number of data points -- i.e. minimum number of pageviews -- to show up on the list. 1 keeps all results; 100 or any number in that magnitude is likely a good choice.
-						<br><br>
-					</p>
+					<p><b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.</p>
+					<p><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.</p>
+					<p><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated". If this is number of unique devices that viewed an article, it could be set to 1 as a given UA+IP could only contribute at most 1 to the count.</p>
+					<p><b>Min-count</b>: not formally part of differential privacy, but we introduce a minimum number of data points -- i.e. minimum number of pageviews -- to show up on the list. 1 keeps all results; 100 or any number in that magnitude is likely a good choice.</p>
 				</section>
 				<section class="form">
 					<form action="#diff-privacy">
@@ -113,20 +111,7 @@
 					</form>
 				</section>
 				<!-- Empty section to hold results -->
-				<section id="results">
-					<div class="cols cols2">
-						<div class="col col1">
-							<section class="text" id="actual-data">
-								<!-- Empty section to hold results -->
-							</section>
-						</div>
-
-						<div class="col col1">
-							<section class="text" id="diff-priv-data">
-								<!-- Empty section to hold results -->
-							</section>
-						</div>
-					</div>
+				<section class="text" id="results">
 				</section>
 			</section>
 		</main>
@@ -144,6 +129,7 @@
 	</footer>
 
 	<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+	<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
 	<script type="text/javascript">
 		$(document).ready(function() {
 			$('form label.placeholder').each(function() {
@@ -169,38 +155,47 @@
 		});
 
 		var render_results = function(data) {
-			$("#actual-data").empty();
-			$("#diff-priv-data").empty();
+			$("#results").empty();
+			console.log(data);
 			if ("Error" in data) {
-				$("#seed").append("<br><p>Error: " + data["Error"] + "</p>");
+				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");
 			}
 			else {
-				if (data["groundtruth"].length > 0) {
-					$("#actual-data").append("<ol>");
-					for (var r in data["groundtruth"]) {
-						$("#actual-data").append("<li>" + r[0] + " (" + r[1] + " pviews)</li>");
-					}
-					$("#actual-data").append("</ol>");
+				var table_data = [];
+				var table_html = '<table id="results-table">';
+				table_html += '<thead><tr><th>Article</th><th>Actual Pviews</th><th>Actual Rank</th><th>DP Pviews</th><th>DP Rank</th><th>Pviews Diff</th><th>Rank Diff</th></tr></thead>';
+				table_html += '</table>';
+				$("#results").append(table_html);
+				for (var article in data["results"]) {
+					var row = {};
+					row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article + "</a>";
+					row['Actual Pviews'] = data["results"][article]["gt-views"];
+					row['Actual Rank'] = data["results"][article]["gt-rank"];
+					row['DP Pviews'] = data["results"][article]["dp-views"];
+					row['DP Rank'] = data["results"][article]["dp-rank"];
+					row['Pviews Diff'] = data["results"][article]["dp-views"] - data["results"][article]["gt-views"];
+					row['Rank Diff'] = data["results"][article]["dp-rank"] - data["results"][article]["gt-rank"];
+					table_data.push(row);
 				}
-				else {
-					$("#actual-data").append("<li><No data.</li>");
-				}
-				if (data["diff-priv"].length > 0) {
-					$("#diff-priv-data").append("<ol>");
-					for (var r in data["diff-priv"]) {
-						$("#diff-priv-data").append("<li>" + r[0] + " (" + r[1] + " pviews)</li>");
-					}
-					$("#diff-priv-data").append("</ol>");
-				}
-				else {
-					$("#diff-priv-data").append("<li><No data.</li>");
-				}
-
+				$('#results-table').DataTable( {
+					"data": table_data,
+					"columns": [{'data': "Article"},
+								{'data': "Actual Pviews"},
+								{'data': "Actual Rank"},
+								{'data': "DP Pviews"},
+								{'data': "DP Rank"},
+								{'data': "Pviews Diff"},
+								{'data': "Rank Diff"}],
+					"searching": false,
+					"scrollY": "600px",
+					"paging": false,
+					"order": [1, 'desc']
+				} );
 			}
 		}
 
 		function queryDiffPrivate() {
-			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }
