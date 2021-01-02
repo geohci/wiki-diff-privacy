@@ -156,7 +156,7 @@
 
 		var render_results = function(data) {
 			$("#results").empty();
-			console.log(data);
+			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qual-eps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters.</p>");
 			if ("Error" in data) {
 				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");
 			}
@@ -168,8 +168,8 @@
 				$("#results").append(table_html);
 				for (var article in data["results"]) {
 					var row = {};
-					if (article.length > 50) {
-						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.substring(0, 47).replaceAll('_', ' ') + "...</a>";
+					if (article.length > 48) {
+						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.substring(0, 45).replaceAll('_', ' ') + "...</a>";
 					} else {
 						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.replaceAll('_', ' ') + "</a>";
 					}
@@ -199,7 +199,8 @@
 		}
 
 		function queryDiffPrivate() {
-			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+//			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }

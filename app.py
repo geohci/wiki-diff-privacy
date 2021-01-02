@@ -1,5 +1,4 @@
-# Many thanks to: https://wikitech.wikimedia.org/wiki/Help:Toolforge/My_first_Flask_OAuth_tool
-
+import math
 import os
 import yaml
 
@@ -36,7 +35,7 @@ def pageviews():
     mincount, lang, eps, sensitivity = validate_api_args()
     results = get_groundtruth(lang, mincount)
     add_laplace(results, eps, sensitivity, mincount)
-    return jsonify({'params':{'mincount':mincount, 'lang':lang, 'eps':eps, 'sensitivity':sensitivity},
+    return jsonify({'params':{'mincount':mincount, 'lang':lang, 'eps':eps, 'sensitivity':sensitivity, 'qual-eps':qual_eps(eps)},
                     'results':results})
 
 def get_groundtruth(lang, mincount):
@@ -58,11 +57,14 @@ def add_laplace(groundtruth, eps, sensitivity, mincount):
         groundtruth[title]['dp-views'] = dp_results[title]
         groundtruth[title]['dp-rank'] = dp_rank
 
+def qual_eps(eps, p=0.5):
+    return ((math.e ** eps) * p) / (1 + (((math.e ** eps) - 1) * p))
+
 def validate_lang(lang):
     return lang in WIKIPEDIA_LANGUAGE_CODES
 
 def validate_eps(eps):
-    return eps <= 1 and eps > 0
+    return eps > 0
 
 def validate_sensitivity(sensitivity):
     return sensitivity >= 1
