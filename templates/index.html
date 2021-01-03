@@ -59,11 +59,10 @@
 					<p><b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.</p>
 					<p><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.</p>
 					<p><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated".</p>
-					<p><b>Min-count</b>: not formally part of differential privacy, but we grey out rows that fall below this threshold of data points. This is different from the concept of the threshold in <a href="https://desfontain.es/privacy/almost-differential-privacy.html">(ε,δ)-differential privacy</a>.</p>
 				</section>
 				<section class="form">
 					<form action="#diff-privacy">
-						<div class="cols cols5">
+						<div class="cols cols4">
 							<div class="col col1">
 								{% if lang %}
 								<label class="placeholder"><span class="field_name">Language code*</span>
@@ -94,17 +93,6 @@
 								{% else %}
 								<label class="placeholder"><span class="field_name">Sensitivity*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="sensitivity"/>
-								</label>
-								{% endif %}
-							</div>
-							<div class="col col1">
-								{% if mincount %}
-								<label class="placeholder"><span class="field_name">Min-count</span>
-									<input type="number" value="{{mincount}}" placeholder="Placeholder text" id="min-count"/>
-								</label>
-								{% else %}
-								<label class="placeholder"><span class="field_name">Min-count</span>
-									<input type="number" value="" placeholder="Placeholder text" id="min-count"/>
 								</label>
 								{% endif %}
 							</div>
@@ -162,6 +150,7 @@
 		var render_results = function(data) {
 			$("#results").empty();
 			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qual-eps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct).</p>");
+			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['prop_within'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregate-threshold'] + ".</p>");
 			if ("Error" in data) {
 				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");
 			}
@@ -196,14 +185,14 @@
 								{'data': "DP Rank"},
 								{'data': "Pviews Diff"},
 								{'data': "Rank Diff"},
-								{'data': "Aggregate?"}
+								{'data': "Aggregate?", "visible": false}
 								],
 					"searching": false,
 					"scrollY": "600px",
 					"paging": false,
 					"order": [1, 'desc'],
 					"createdRow": function(row, data, dataIndex) {
-						if ( data['Actual Pviews'] < Number(document.getElementById('min-count').value )) {
+						if ( data['Aggregate?'] == 'Yes' ) {
 							$(row).addClass('below-threshold');
 						}
 					}
@@ -212,8 +201,8 @@
 		}
 
 		function queryDiffPrivate() {
-			//var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
-			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			//var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }

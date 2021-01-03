@@ -27,16 +27,23 @@ CORS(app)
 @app.route('/')
 def index():
     """Load UI, optionally with form prefilled based on URL parameters. User will still need to hit `Submit` button."""
-    mincount, lang, eps, sensitivity = validate_api_args()
-    return render_template('index.html', mincount=mincount, lang=lang, eps=eps, sensitivity=sensitivity)
+    lang, eps, sensitivity, alpha, prop_within = validate_api_args()
+    return render_template('index.html', lang=lang, eps=eps, sensitivity=sensitivity, alpha=alpha, prop_within=prop_within)
 
 @app.route('/api/v1/pageviews')
 def pageviews():
     """Compute differentially-private version of top pageviews for a Wikipedia language and compare to groundtruth."""
-    _, lang, eps, sensitivity = validate_api_args()
+    lang, eps, sensitivity, alpha, prop_within = validate_api_args()
     results = get_groundtruth(lang)
-    add_laplace(results, eps, sensitivity)
-    return jsonify({'params':{'lang':lang, 'eps':eps, 'sensitivity':sensitivity, 'qual-eps':qual_eps(eps)},
+    add_laplace(results, eps, sensitivity, alpha, prop_within)
+    return jsonify({'params':{'lang':lang,
+                              'eps':eps,
+                              'sensitivity':sensitivity,
+                              'qual-eps':qual_eps(eps),
+                              'alpha':alpha,
+                              'prop_within':prop_within,
+                              'aggregate-threshold':aggregation_threshold(sensitivity, eps, alpha, prop_within)
+                              },
                     'results':results})
 
 def get_groundtruth(lang):
@@ -49,7 +56,7 @@ def get_groundtruth(lang):
     return {r['article']:{'gt-rank':r['rank'], 'gt-views':r['views']} for r in groundtruth}
 
 # Thanks to: https://github.com/Billy1900/Awesome-Differential-Privacy/blob/master/Laplace%26Exponetial/src/laplace_mechanism.py
-def add_laplace(groundtruth, eps, sensitivity, floor=0):
+def add_laplace(groundtruth, eps, sensitivity, alpha=0.5, prop_within=0.25, floor=0):
     """Add in differentially-private version of results."""
     dp_results = {}
     for title in groundtruth:
@@ -57,9 +64,10 @@ def add_laplace(groundtruth, eps, sensitivity, floor=0):
         dpviews = max(floor, round(views + np.random.laplace(0, sensitivity / eps)))
         dp_results[title] = dpviews
     for dp_rank, title in enumerate(sorted(dp_results, key=dp_results.get, reverse=True), start=1):
-        groundtruth[title]['dp-views'] = dp_results[title]
+        dp_views = dp_results[title]
+        groundtruth[title]['dp-views'] = dp_views
         groundtruth[title]['dp-rank'] = dp_rank
-        groundtruth[title]['do-aggregate'] = do_aggregate(groundtruth[title]['dp-views'], sensitivity, eps)
+        groundtruth[title]['do-aggregate'] = do_aggregate(dp_views, sensitivity, eps, alpha, prop_within)
 
 def qual_eps(eps, p=0.5):
     """Provide a qualitative explanation for what a particular epsilon value means.
@@ -83,6 +91,13 @@ def qual_eps(eps, p=0.5):
     else:
         return None
 
+def aggregation_threshold(sensitivity, eps, alpha=0.5, prop_within=0.25):
+    """Same as do_aggregate but determines threshold where data is deemed 'too noisy'."""
+    rank = alpha / 2
+    lbda = sensitivity / eps
+    # get confidence interval; this is symmetric where `lower bound = noisedX - ci` and `upper bound = noisedX + ci`
+    ci = abs(lbda * np.log(2 * rank))
+    return math.ceil(ci / prop_within)
 
 def do_aggregate(noisedX, sensitivity, eps, alpha=0.5, prop_within=0.25):
     """Check whether noisy data X is at least (100 * alpha)% of being within Y% of true value.
@@ -124,12 +139,19 @@ def validate_sensitivity(sensitivity):
 def validate_mincount(mincount):
     return mincount >= 0
 
+def validate_alpha(alpha):
+    return alpha > 0 and alpha < 1
+
+def validate_prop_within(prop_within):
+    return prop_within > 0 and prop_within < 1
+
 def validate_api_args():
     lang = 'en'
     if 'lang' in request.args:
         if validate_lang(request.args['lang'].lower()):
             lang = request.args['lang'].lower()
 
+    # not currently used -- left in though because can be another useful data quality mechanism
     mincount = 0
     if 'mincount' in request.args:
         try:
@@ -154,4 +176,20 @@ def validate_api_args():
         except ValueError:
             pass
 
-    return mincount, lang, eps, sensitivity
+    alpha = 0.5
+    if 'alpha' in request.args:
+        try:
+            if validate_alpha(float(request.args['alpha'])):
+                alpha = float(request.args['alpha'])
+        except ValueError:
+            pass
+
+    prop_within = 0.25
+    if 'prop_within' in request.args:
+        try:
+            if validate_prop_within(float(request.args['prop_within'])):
+                prop_within = float(request.args['prop_within'])
+        except ValueError:
+            pass
+
+    return lang, eps, sensitivity, alpha, prop_within
