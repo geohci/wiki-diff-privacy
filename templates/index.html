@@ -212,8 +212,8 @@
 		}
 
 		function queryDiffPrivate() {
-			var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
-			//var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			//var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }
