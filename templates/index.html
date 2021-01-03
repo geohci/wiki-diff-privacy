@@ -10,6 +10,11 @@
 	<link href='https://tools-static.wmflabs.org/fontcdn/css?family=Lato:400,400italic,700,700italic&subset=latin' rel='stylesheet' type='text/css'>
 	<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/datatables/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
 	<link rel="stylesheet" href="./static/style.css" />
+	<style>
+		.below-threshold {
+		  opacity: 0.5;
+		}
+	</style>
 </head>
 
 <body>
@@ -49,45 +54,45 @@
 			<section id="diff-privacy" class="boxwidth--1-1 padded--left padded--right">
 				<h2>Top-viewed Articles on a Wikipedia</h2>
 				<section class="text">
-					<p>This tool fetches the top-viewed articles for a given wiki from yesterday. On the left is the actual data -- i.e. accurate counts without any noise added. On the right is the data after differential privacy has been applied (specifically noise drawn from a <a href="https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf#section.3.3">Laplace distribution</a>).</p>
+					<p>This tool fetches the top-viewed articles for a given wiki from yesterday. First you have the actual data -- i.e. accurate counts without any noise added. Then you have the data after differential privacy (DP) has been applied (specifically noise drawn from a <a href="https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf#section.3.3">Laplace distribution</a>).</p>
 					<p>You can play around with the different hyperparameters to see how it affects the results. See <a href="https://research.fb.com/blog/2020/06/protecting-privacy-in-facebook-mobility-data-during-the-covid-19-response/">this Facebook blogpost</a> for a good worked example.</p>
 					<p><b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.</p>
 					<p><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.</p>
-					<p><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated". If this is number of unique devices that viewed an article, it could be set to 1 as a given UA+IP could only contribute at most 1 to the count.</p>
-					<p><b>Min-count</b>: not formally part of differential privacy, but we introduce a minimum number of data points -- i.e. minimum number of pageviews -- to show up on the list. 1 keeps all results; 100 or any number in that magnitude is likely a good choice.</p>
+					<p><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated".</p>
+					<p><b>Min-count</b>: not formally part of differential privacy, but we grey out rows that fall below this threshold of data points. This is different from the concept of the threshold in <a href="https://desfontain.es/privacy/almost-differential-privacy.html">(ε,δ)-differential privacy</a>.</p>
 				</section>
 				<section class="form">
 					<form action="#diff-privacy">
 						<div class="cols cols5">
 							<div class="col col1">
 								{% if lang %}
-								<label class="placeholder"><span class="field_name">Language code</span>
+								<label class="placeholder"><span class="field_name">Language code*</span>
 									<input type="text" value="{{lang}}" placeholder="Placeholder text" id="lang"/>
 								</label>
 								{% else %}
-								<label class="placeholder"><span class="field_name">Language code</span>
+								<label class="placeholder"><span class="field_name">Language code*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="lang"/>
 								</label>
 								{% endif %}
 							</div>
 							<div class="col col1">
 								{% if eps %}
-								<label class="placeholder"><span class="field_name">Epsilon</span>
+								<label class="placeholder"><span class="field_name">Epsilon*</span>
 									<input type="text" value="{{eps}}" placeholder="Placeholder text" id="eps"/>
 								</label>
 								{% else %}
-								<label class="placeholder"><span class="field_name">Epsilon</span>
+								<label class="placeholder"><span class="field_name">Epsilon*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="eps"/>
 								</label>
 								{% endif %}
 							</div>
 							<div class="col col1">
 								{% if sensitivity %}
-								<label class="placeholder"><span class="field_name">Sensitivity</span>
+								<label class="placeholder"><span class="field_name">Sensitivity*</span>
 									<input type="text" value="{{sensitivity}}" placeholder="Placeholder text" id="sensitivity"/>
 								</label>
 								{% else %}
-								<label class="placeholder"><span class="field_name">Sensitivity</span>
+								<label class="placeholder"><span class="field_name">Sensitivity*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="sensitivity"/>
 								</label>
 								{% endif %}
@@ -95,11 +100,11 @@
 							<div class="col col1">
 								{% if mincount %}
 								<label class="placeholder"><span class="field_name">Min-count</span>
-									<input type="text" value="{{mincount}}" placeholder="Placeholder text" id="min-count"/>
+									<input type="number" value="{{mincount}}" placeholder="Placeholder text" id="min-count"/>
 								</label>
 								{% else %}
 								<label class="placeholder"><span class="field_name">Min-count</span>
-									<input type="text" value="" placeholder="Placeholder text" id="min-count"/>
+									<input type="number" value="" placeholder="Placeholder text" id="min-count"/>
 								</label>
 								{% endif %}
 							</div>
@@ -163,7 +168,7 @@
 			else {
 				var table_data = [];
 				var table_html = '<table id="results-table">';
-				table_html += '<thead><tr><th>Article</th><th>Actual Pviews</th><th>Actual Rank</th><th>DP Pviews</th><th>DP Rank</th><th>Pviews Diff</th><th>Rank Diff</th></tr></thead>';
+				table_html += '<thead><tr><th>Article</th><th>Actual Pviews</th><th>Actual Rank</th><th>DP Pviews</th><th>DP Rank</th><th>Pviews Diff</th><th>Rank Diff</th><th>Aggregate to Weekly?</th></tr></thead>';
 				table_html += '</table>';
 				$("#results").append(table_html);
 				for (var article in data["results"]) {
@@ -179,6 +184,7 @@
 					row['DP Rank'] = data["results"][article]["dp-rank"];
 					row['Pviews Diff'] = data["results"][article]["dp-views"] - data["results"][article]["gt-views"];
 					row['Rank Diff'] = data["results"][article]["gt-rank"] - data["results"][article]["dp-rank"];
+					row['Aggregate?'] = data["results"][article]["do-aggregate"];
 					table_data.push(row);
 				}
 				$('#results-table').DataTable( {
@@ -189,17 +195,25 @@
 								{'data': "DP Pviews"},
 								{'data': "DP Rank"},
 								{'data': "Pviews Diff"},
-								{'data': "Rank Diff"}],
+								{'data': "Rank Diff"},
+								{'data': "Aggregate?"}
+								],
 					"searching": false,
 					"scrollY": "600px",
 					"paging": false,
-					"order": [1, 'desc']
+					"order": [1, 'desc'],
+					"createdRow": function(row, data, dataIndex) {
+						if ( data['Actual Pviews'] < Number(document.getElementById('min-count').value )) {
+							$(row).addClass('below-threshold');
+						}
+					}
 				} );
 			}
 		}
 
 		function queryDiffPrivate() {
-			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			//var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?mincount=" + document.getElementById('min-count').value + "&lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }
