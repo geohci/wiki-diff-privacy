@@ -1,3 +1,4 @@
+from datetime import date, datetime, timedelta
 import math
 import os
 import yaml
@@ -49,10 +50,17 @@ def pageviews():
 def get_groundtruth(lang):
     """Get actual counts of top articles and their pageviews from a Wikipedia from yesterday."""
     p = PageviewsClient(user_agent="isaac@wikimedia.org -- diff private toolforge")
-    groundtruth = p.top_articles(project='{0}.wikipedia'.format(lang),
-                                 access='all-access',
-                                 year=None, month=None, day=None,  # defaults to yesterday
-                                 limit=50)
+    try:
+        groundtruth = p.top_articles(project='{0}.wikipedia'.format(lang),
+                                     access='all-access',
+                                     year=None, month=None, day=None,  # defaults to yesterday
+                                     limit=50)
+    except Exception:
+        two_days_ago = date.today() - timedelta(days=2)
+        groundtruth = p.top_articles(project='{0}.wikipedia'.format(lang),
+                                     access='all-access',
+                                     year=two_days_ago.year, month=two_days_ago.month, day=two_days_ago.day,
+                                     limit=50)
     return {r['article']:{'gt-rank':r['rank'], 'gt-views':r['views']} for r in groundtruth}
 
 # Thanks to: https://github.com/Billy1900/Awesome-Differential-Privacy/blob/master/Laplace%26Exponetial/src/laplace_mechanism.py
