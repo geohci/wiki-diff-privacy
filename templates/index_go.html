@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Differential Privacy + Wikipedia Exploration</title>
+	<link rel="shortcut icon" href="./static/favicon.ico">
+	<meta name="viewport" content="width = device-width, initial-scale=1, user-scalable = no" />
+	<link href="https://tools-static.wmflabs.org/fontcdn/css?family=Merriweather:400,400italic,700,700italic&subset=latin" rel="stylesheet" type="text/css">
+	<link href='https://tools-static.wmflabs.org/fontcdn/css?family=Lato:400,400italic,700,700italic&subset=latin' rel='stylesheet' type='text/css'>
+	<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/datatables/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="../static/style.css" type="text/css">
+	<style>
+		.below-threshold {
+		  opacity: 0.5;
+		}
+	</style>
+</head>
+
+<body>
+	<script type="text/javascript">
+		var body = document.body;
+		body.classList.add('js');
+	</script>
+
+	<div id="origin_bar">
+		<div class="boxwidth--1-1 padded--left padded--right">
+			<a href="https://research.wikimedia.org/" class="origin_title"><img src="./static/Wikimedia-Foundation-logo.svg" alt="Wikimedia Foundation logo" />Wikimedia Privacy and Research</a>
+		</div>
+	</div>
+
+	<article id="tool_holder">
+		<!-- Header / Start -->
+		<div id="tool_header--holder" class="boxwidth--1-1 padded--left padded--right">
+			<header id="tool_header">
+				<!-- Tool name -->
+				<h1>Differential Privacy + Wikipedia Exploration</h1>
+				<div class="meta">
+					<div class="disclaimer note">
+						<p>No guarantees are made that this tool will be maintained.</p>
+						<p>This is an experimental tool hosted on <a href="https://wikitech.wikimedia.org/wiki/Portal:Toolforge">Toolforge</a>. No additional personal data is collected by this tool per the Cloud Services
+							<a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use" target="_blank" rel="noopener">Terms of Use</a>.</p>
+					</div>
+					<div class="description padded--right">
+						<p>This tool showcases how different approaches to differential privacy might affect top-viewed lists. In reality, this approach would likely be applied to e.g., pageviews by country, but here we use the top-viewed articles in a wiki (public data) as a proxy. This is a clone of an <a href="https://diff-privacy.toolforge.org/" target="_blank" rel="noopener">earlier exploration of differential privacy</a>, but is built using Golang and Apache Beam's differential privacy library, rather than Python, Flask, and a hand-coded version of differential privacy.</p>
+					</div>
+				</div>
+			</header>
+		</div>
+
+		<div class="separator"></div>
+
+		<main id="tool_main">
+			<section id="diff-privacy" class="boxwidth--1-1 padded--left padded--right">
+				<h2>Top-viewed Articles on a Wikipedia</h2>
+				<section class="text">
+					<p>This tool fetches the top-viewed articles for a given wiki from yesterday. First you have the actual data -- i.e. accurate counts without any noise added. Then you have the data after differential privacy (DP) has been applied (specifically noise drawn from a <a href="https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf#section.3.3">Laplace distribution</a>).</p>
+					<p>You can play around with the different hyperparameters to see how it affects the results. See <a href="https://research.fb.com/blog/2020/06/protecting-privacy-in-facebook-mobility-data-during-the-covid-19-response/">this Facebook blogpost</a> for a good worked example.</p>
+					<p><b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.</p>
+					<p><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.</p>
+					<p><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated".</p>
+				</section>
+				<section class="form">
+					<form action="#diff-privacy">
+						<div class="cols cols4">
+							<div class="col col1">
+								{{ if .Lang }}
+								<label class="placeholder"><span class="field_name">Language code*</span>
+									<input type="text" value="{{ .Lang }}" placeholder="Placeholder text" id="lang"/>
+								</label>
+								{{ else }}
+								<label class="placeholder"><span class="field_name">Language code*</span>
+									<input type="text" value="" placeholder="Placeholder text" id="lang"/>
+								</label>
+								{{ end }}
+							</div>
+							<div class="col col1">
+								{{ if .Epsilon }}
+								<label class="placeholder"><span class="field_name">Epsilon*</span>
+									<input type="text" value="{{ .Epsilon }}" placeholder="Placeholder text" id="eps"/>
+								</label>
+								{{ else }}
+								<label class="placeholder"><span class="field_name">Epsilon*</span>
+									<input type="text" value="" placeholder="Placeholder text" id="eps"/>
+								</label>
+								{{ end }}
+							</div>
+							<div class="col col1">
+								{{ if .Sensitivity }}
+								<label class="placeholder"><span class="field_name">Sensitivity*</span>
+									<input type="text" value="{{ .Sensitivity }}" placeholder="Placeholder text" id="sensitivity"/>
+								</label>
+								{{ else }}
+								<label class="placeholder"><span class="field_name">Sensitivity*</span>
+									<input type="text" value="" placeholder="Placeholder text" id="sensitivity"/>
+								</label>
+								{{ end }}
+							</div>
+							<div class="col col1">
+								<span class="field_name"></span>
+								<input type="submit" value="Submit" id="btnSubmit" />
+							</div>
+						</div>
+					</form>
+				</section>
+				<!-- Empty section to hold results -->
+				<section class="text" id="results">
+				</section>
+			</section>
+		</main>
+	</article>
+
+	<footer id="tool_footer">
+		<div id="tool_footer-in" class="boxwidth--1-1 padded--left padded--right">
+			<p>Experimental tool developed by <span class="tool-author"><a href="https://meta.wikipedia.org/wiki/User:Isaac_(WMF)">Isaac (WMF)</a> and <a href="https://haltriedman.com">Hal</a> as part of <a href="https://research.wikimedia.org/">Wikimedia Research</a></span> and the <a href="https://security.wikimedia.org/">Privacy Engineering</a> team.</p>
+			<ul>
+				<li><a href="https://github.com/htried/wiki-diff-privacy">View Source</a></li>
+				<li><a href="https://phabricator.wikimedia.org/T267283">Phab</a></li>
+				<li><a href="https://github.com/htried/wiki-diff-privacy/blob/main/README.md#license">License</a></li>
+			</ul>
+		</div>
+	</footer>
+
+	<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+	<script type="text/javascript" src="https://tools-static.wmflabs.org/cdnjs/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('form label.placeholder').each(function() {
+				if (!$('input, textarea, select', this).val()) {
+	 				$(this).addClass('off');
+				}
+				$(this).on('focusin', function() {
+					$(this).removeClass('off');
+				});
+				$(this).on('focusout', function() {
+					if (!$('input, textarea, select', this).val()) {
+						$(this).addClass('off');
+					}
+				});
+				$('*[placeholder]', this).attr('placeholder', '');
+			});
+		});
+	</script>
+
+	<script type="text/javascript">
+		$('#btnSubmit').click(function (e) {
+		   e.preventDefault(); queryDiffPrivate();
+		});
+
+		var render_results = function(data) {
+			$("#results").empty();
+			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qual-eps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct).</p>");
+			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['prop_within'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregate-threshold'] + ".</p>");
+			if ("Error" in data) {
+				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");
+			}
+			else {
+				var table_data = [];
+				var table_html = '<table id="results-table">';
+				table_html += '<thead><tr><th>Article</th><th>Actual Pviews</th><th>Actual Rank</th><th>DP Pviews</th><th>DP Rank</th><th>Pviews Diff</th><th>Rank Diff</th><th>Aggregate to Weekly?</th></tr></thead>';
+				table_html += '</table>';
+				$("#results").append(table_html);
+				for (var article in data["results"]) {
+					var row = {};
+					if (article.length > 48) {
+						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.substring(0, 45).replaceAll('_', ' ') + "...</a>";
+					} else {
+						row['Article'] = '<a href="https://' + document.getElementById('lang').value + '.wikipedia.org/wiki/' + article + '">' + article.replaceAll('_', ' ') + "</a>";
+					}
+					row['Actual Pviews'] = data["results"][article]["gt-views"];
+					row['Actual Rank'] = data["results"][article]["gt-rank"];
+					row['DP Pviews'] = data["results"][article]["dp-views"];
+					row['DP Rank'] = data["results"][article]["dp-rank"];
+					row['Pviews Diff'] = data["results"][article]["dp-views"] - data["results"][article]["gt-views"];
+					row['Rank Diff'] = data["results"][article]["gt-rank"] - data["results"][article]["dp-rank"];
+					row['Aggregate?'] = data["results"][article]["do-aggregate"];
+					table_data.push(row);
+				}
+				$('#results-table').DataTable( {
+					"data": table_data,
+					"columns": [{'data': "Article"},
+								{'data': "Actual Pviews"},
+								{'data': "Actual Rank"},
+								{'data': "DP Pviews"},
+								{'data': "DP Rank"},
+								{'data': "Pviews Diff"},
+								{'data': "Rank Diff"},
+								{'data': "Aggregate?", "visible": false}
+								],
+					"searching": false,
+					"scrollY": "600px",
+					"paging": false,
+					"order": [1, 'desc'],
+					"createdRow": function(row, data, dataIndex) {
+						if ( data['Aggregate?'] == 'Yes' ) {
+							$(row).addClass('below-threshold');
+						}
+					}
+				} );
+			}
+		}
+
+		function queryDiffPrivate() {
+			var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			// var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			$.ajax(queryUrl, {success: render_results.bind(this),
+							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
+							  }
+				  );
+	    }
+	</script>
+
+</body>
+
+</html>
