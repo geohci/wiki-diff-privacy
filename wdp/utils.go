@@ -6,8 +6,6 @@ import (
     "io"
     "io/ioutil"
     "encoding/json"
-    "html/template"
-  	"log"
   	"math"
   	"strings"
     "path/filepath"
@@ -17,7 +15,35 @@ import (
   	"encoding/csv"
 )
 
+type Article struct {
+	Name	string 	`json:"article"`
+	Views 	int 	`json:"views"`
+	Rank 	int 	`json:"rank"`
+}
 
+type Project struct {
+	Project 	string 		`json:"project"`
+	Access		string 		`json:"access"`
+	Year 		string 		`json:"year"`
+	Month		string 		`json:"month"`
+	Day 		string 		`json:"day"`
+	Articles 	[]Article 	`json:"articles"`
+}
+
+type ApiResponse struct {
+	Items 	[]Project 	`json:"items"`
+}
+
+type PageVars struct {
+	Lang 		string
+	MinCount 	int 
+	Epsilon		float64
+	Sensitivity int 
+	Alpha 		float64
+	PropWithin 	float64
+}
+
+var LanguageCodes = []string{"aa", "ab", "ace", "ady", "af", "ak", "als", "am", "an", "ang", "ar", "arc", "ary", "arz", "as", "ast", "atj", "av", "avk", "awa", "ay", "az", "azb", "ba", "ban", "bar", "bat-smg", "bcl", "be", "be-x-old", "bg", "bh", "bi", "bjn", "bm", "bn", "bo", "bpy", "br", "bs", "bug", "bxr", "ca", "cbk-zam", "cdo", "ce", "ceb", "ch", "cho", "chr", "chy", "ckb", "co", "cr", "crh", "cs", "csb", "cu", "cv", "cy", "da", "de", "din", "diq", "dsb", "dty", "dv", "dz", "ee", "el", "eml", "en", "eo", "es", "et", "eu", "ext", "fa", "ff", "fi", "fiu-vro", "fj", "fo", "fr", "frp", "frr", "fur", "fy", "ga", "gag", "gan", "gcr", "gd", "gl", "glk", "gn", "gom", "gor", "got", "gu", "gv", "ha", "hak", "haw", "he", "hi", "hif", "ho", "hr", "hsb", "ht", "hu", "hy", "hyw", "hz", "ia", "id", "ie", "ig", "ii", "ik", "ilo", "inh", "io", "is", "it", "iu", "ja", "jam", "jbo", "jv", "ka", "kaa", "kab", "kbd", "kbp", "kg", "ki", "kj", "kk", "kl", "km", "kn", "ko", "koi", "kr", "krc", "ks", "ksh", "ku", "kv", "kw", "ky", "la", "lad", "lb", "lbe", "lez", "lfn", "lg", "li", "lij", "lld", "lmo", "ln", "lo", "lrc", "lt", "ltg", "lv", "mai", "map-bms", "mdf", "mg", "mh", "mhr", "mi", "min", "mk", "ml", "mn", "mnw", "mr", "mrj", "ms", "mt", "mus", "mwl", "my", "myv", "mzn", "na", "nah", "nap", "nds", "nds-nl", "ne", "new", "ng", "nl", "nn", "no", "nov", "nqo", "nrm", "nso", "nv", "ny", "oc", "olo", "om", "or", "os", "pa", "pag", "pam", "pap", "pcd", "pdc", "pfl", "pi", "pih", "pl", "pms", "pnb", "pnt", "ps", "pt", "qu", "rm", "rmy", "rn", "ro", "roa-rup", "roa-tara", "ru", "rue", "rw", "sa", "sah", "sat", "sc", "scn", "sco", "sd", "se", "sg", "sh", "shn", "si", "simple", "sk", "sl", "sm", "smn", "sn", "so", "sq", "sr", "srn", "ss", "st", "stq", "su", "sv", "sw", "szl", "szy", "ta", "tcy", "te", "tet", "tg", "th", "ti", "tk", "tl", "tn", "to", "tpi", "tr", "ts", "tt", "tum", "tw", "ty", "tyv", "udm", "ug", "uk", "ur", "uz", "ve", "vec", "vep", "vi", "vls", "vo", "wa", "war", "wo", "wuu", "xal", "xh", "xmf", "yi", "yo", "za", "zea", "zh", "zh-classical", "zh-min-nan", "zh-yue", "zu"}
 
 // get top 50 articles, then create a csv file with fake "session" data for
 // beam to work with 
@@ -38,6 +64,7 @@ func InitializeSyntheticData(date, lang string) error {
 	// create writer and write header
 	w := csv.NewWriter(f)
 	defer w.Flush()
+	w.Comma = '|'
 	w.Write([]string{"id", "name"})
 
 	var totalViews = 0
@@ -312,21 +339,3 @@ func RemoveOldContents(date, dir string) error {
 
     return nil
 }
-
-// readInput reads from a .csv file detailing page views in the form
-// of "id, name" and returns a PCollection of Visit structs.
-
-// from the privacy on beam codelab tutorial
-func ReadInput(s beam.Scope, input string) beam.PCollection {
-	s = s.Scope("readInput")
-	lines := textio.Read(s, input)
-	return beam.ParDo(s, codelab.CreateVisitsFn, lines)
-}
-
-func WriteOutput(s beam.Scope, output beam.PCollection, outputTextName string) {
-	s = s.Scope("writeOutput")
-	output = beam.ParDo(s, convertToPairFn, output)
-	formattedOutput := beam.Combine(s, &normalizeOutputCombineFn{}, output)
-	textio.Write(s, outputTextName, formattedOutput)
-}
-
