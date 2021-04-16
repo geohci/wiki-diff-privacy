@@ -65,7 +65,8 @@ func InitializeSyntheticData(date, lang string) error {
 	w := csv.NewWriter(f)
 	defer w.Flush()
 	w.Comma = '|'
-	w.Write([]string{"id", "name"})
+	// w.Write([]string{"id", "name"})
+	w.Write([]string{"name"})
 
 	var totalViews = 0
 
@@ -73,7 +74,8 @@ func InitializeSyntheticData(date, lang string) error {
 	for _, article := range topFiftyArticles {
 		// create the requisite number of "views" of the form {id, name} and write to csv
 		for j := 0; j < article.Views; j++ {
-			err = w.Write([]string{strconv.Itoa(j + totalViews), article.Name})
+			// err = w.Write([]string{strconv.Itoa(j + totalViews), article.Name})
+			err = w.Write([]string{article.Name})
 			if err != nil {
 				return err
 			}
