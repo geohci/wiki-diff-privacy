@@ -1,3 +1,6 @@
+// various functions for making API calls, creating output structs, accessing
+// the DB, etc.
+
 package wdp
 
 import (
@@ -30,6 +33,19 @@ type Project struct {
 type ApiResponse struct {
 	Items 	[]Project 	`json:"items"`
 }
+
+// struct to represent a row of the output table
+type TableRow struct {
+	Name 	string 		// name of the page visited
+	Views 	int 		// number of views for the day
+	Epsilon float64 	// epsilon used for calculating the number of views (-1 is none)
+	Delta 	float64 	// delta used for calculating the number of views (-1 is none)
+}
+
+// TODO: hone these in
+// various configurations of epsilon and delta to compute the view count per page with
+var Epsilon = []float64{0.1, 0.5, 1, 5}
+var Delta = []float64{math.Pow10(-4), math.Pow10(-2), 0.1, 0.5}
 
 // get the top 50 highest-performing articles for a given language lang from
 // yesterday or the day before
@@ -82,69 +98,45 @@ func GetGroundTruth(lang string) ([50]Article, error) {
 	return topFiftyArticles, nil
 }
 
-func CreateOutputStruct(fname, fnameDP string, vars PageVars) (map[string]map[string]int, error) {
+// create an output structure to send over JSON that will play nicely with the html template
+func CreateOutputStruct(normalCount, dpCount []TableRow, vars PageVars) map[string]map[string]int {
+	// create output map
 	output := make(map[string]map[string]int)
 
-	articles, err := readAndSort(fname)
-	if err != nil {
-		return output, err
-	}
+	// sort the normalCount and dpCount lists by number of views
+	sort.SliceStable(normalCount, func(i, j int) bool {
+		return normalCount[i].Views > normalCount[j].Views
+	})
+	sort.SliceStable(dpCount, func(i, j int) bool {
+		return dpCount[i].Views > dpCount[j].Views
+	})
 
-	articlesDP, err := readAndSort(fname)
-	if err != nil {
-		return output, err
-	}
-
+	// for each normal article
 	for i, art := range articles {
+		// create a map and input its rank and number of views
 		articleEntry := make(map[string]int)
 		output[art.Name] = articleEntry
 		output[art.Name]["gt-rank"] = i
 		output[art.Name]["gt-views"] = art.Views
+		
+		// add all these -1 entries to the map, because some counts may be too
+		// small to show up and we need a signifier of that
+		output[art.Name]["dp-rank"] = -1
+		output[art.Name]["dp-views"] = -1
+		output[art.Name]["do-aggregate"] = -1
 	}
 
+	// for each DP-altered article
 	for i, art := range articlesDP {
+		// add the DP rank, DP views, and whether or not you should aggregate
 		output[art.Name]["dp-rank"] = i
 		output[art.Name]["dp-views"] = art.Views
 		output[art.Name]["do-aggregate"] = DoAggregate(art.Views, vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin)
 	}
 
-	return output, nil
+	return output
 }
 
-func readAndSort(fname string) ([]Article, error) {
-	var articles []Article
-
-	f, err := os.Open(fname)
-	defer f.Close()
-	if err != nil {
-		return articles, err
-	}
-
-	r := csv.NewReader(f)
-	records, err := r.ReadAll()
-	if err != nil {
-		return articles, err
-	}
-
-	for _, rec := range records {
-		v, err := strconv.Atoi(rec[1])
-		if err != nil {
-			return articles, err
-		}
-		var art Article
-		art.Name = rec[0]
-		art.Views = v
-		articles = append(articles, art)
-		
-	}
-
-	sort.SliceStable(articles, func(i, j int) bool {
-		return articles[i].Views > articles[j].Views
-	})
-	// log.Print(articles)
-
-	return articles, nil
-}
 
 // enable CORS headers for the API
 func EnableCors(w *http.ResponseWriter) {

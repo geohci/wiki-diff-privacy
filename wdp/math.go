@@ -2,6 +2,9 @@
 // Hal Triedman. These functions provide context to the DP outputs as they are 
 // displayed to the end user.
 
+// TODO: How exactly are sensitivity and delta related to each other? How does the
+// inclusion of delta in this scheme change these calculations?
+
 package wdp
 
 import "math"

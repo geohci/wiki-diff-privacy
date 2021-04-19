@@ -13,26 +13,18 @@ import (
   	"regexp"
   	"math"
   	"encoding/json"
+  	"database/sql"
+ 	_"github.com/go-sql-driver/mysql"
 
-
-	"github.com/apache/beam/sdks/go/pkg/beam"
-
-	// The following import is required for accessing local files.
-	_ "github.com/apache/beam/sdks/go/pkg/beam/io/filesystem/local"
-
-	"github.com/apache/beam/sdks/go/pkg/beam/runners/direct"
 	"github.com/htried/wiki-diff-privacy/wdp"
-	
-	"github.com/google/differential-privacy/privacy-on-beam/pbeam"
-	"github.com/apache/beam/sdks/go/pkg/beam/transforms/stats"
-	"github.com/apache/beam/sdks/go/pkg/beam/io/textio"
 )
 
 // parameters to send to the client for display
 type outParams struct {
 	Lang 				string	`json:"lang"`
 	Eps 				float64 `json:"eps"`
-	Sensitivity			int 	`json:"sensitivity"` // TODO: change to delta
+	Delta 				float64 `json:"delta"`
+	Sensitivity			int 	`json:"sensitivity"`
 	QualEps 			float64 `json:"qual-eps"`		
 	Alpha 				float64 `json:"alpha"`
 	PropWithin 			float64 `json:"prop-within"`
@@ -45,7 +37,9 @@ type output struct {
 	Results 	map[string]map[string]int 	`json:"results"`
 }
 
-
+// global variables for db and error
+var db *sql.DB
+var err error
 
 // function to load the homepage of the site
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -76,38 +70,19 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 	// validate input API args
 	vars, err := wdp.ValidateApiArgs(r)
 	if err != nil {
-		log.Print("error validating API arguments: ", err)
-	}
-
-	// TODO: update this to get data from db
-	var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
-	err = wdp.RemoveOldContents(yesterday, "data/")
-	if err != nil {
-		log.Print("error removing contents of data folder: ", err)
-	}
-
-	// TODO: remove this
-	fname := fmt.Sprintf("./data/synthetic_data_%s_%s.csv", vars.Lang, yesterday)
-	outname := fmt.Sprintf("./data/output_%s_%s.csv", vars.Lang, yesterday)
-	outnameDP := fmt.Sprintf("./data/dp_output_%s_%s.csv", vars.Lang, yesterday)
-
-	// TODO: update this to get data from db
-	_, err = os.Stat(fname)
-	if os.IsNotExist(err) {
-		err = wdp.InitializeSyntheticData(yesterday, vars.Lang)
-		if err != nil {
-			log.Print("error initializing synthetic data from yesterday: ", err)
-		}
-	} else if err != nil {
-		log.Print("error stat-ing file: ", err)
+		log.Printf("error %v validating API arguments\n", err)
 		return
 	}
 
-	// TODO: udpate this to get data from db
-	results, err := wdp.CreateOutputStruct(outname, outnameDP, vars)
+	// query the database to get normalCount and dpCount
+	normalCount, dpCount, err := wdp.Query(db, vars.Lang, vars.Epsilon, vars.Delta)
 	if err != nil {
-		log.Print("creation of output struct failed: %v", err)
+		log.Printf("error %v querying database\n", err)
+		return
 	}
+
+	// feed those into a util function to format them correctly
+	results := wdp.CreateOutputStruct(normalCount, dpCount, vars)
 
 	// create outward facing parameters
 	var params outParams
@@ -130,8 +105,14 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// bind functions to paths and start listener
+// get DB connection, bind functions to paths, and start listener
 func main() {
+	// connect to the DB
+	db, err = wdp.DBConnection()
+	if err != nil {
+		panic(err.Error())
+	}
+
 	// undo at the end
     http.HandleFunc("/", Index)
     http.HandleFunc("/api/v1/pageviews", PageViews)
