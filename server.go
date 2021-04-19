@@ -28,20 +28,21 @@ import (
 	"github.com/apache/beam/sdks/go/pkg/beam/io/textio"
 )
 
-
+// parameters to send to the client for display
 type outParams struct {
 	Lang 				string	`json:"lang"`
 	Eps 				float64 `json:"eps"`
-	Sensitivity			int 	`json:"sensitivity"`
+	Sensitivity			int 	`json:"sensitivity"` // TODO: change to delta
 	QualEps 			float64 `json:"qual-eps"`		
 	Alpha 				float64 `json:"alpha"`
 	PropWithin 			float64 `json:"prop-within"`
 	AggregateThreshold	float64 `json:"aggregate-threshold"`
 }
 
+// struct that sends back all outbound data
 type output struct {
-	Params		OutParams 	`json:"params"`
-	Results 	map[string]map[string]int `json:"results"`
+	Params		outParams 					`json:"params"`
+	Results 	map[string]map[string]int 	`json:"results"`
 }
 
 
@@ -67,25 +68,30 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
+// function to call the API
 func PageViews(w http.ResponseWriter, r *http.Request) {
+	// enable outside API requests
 	wdp.EnableCors(&w)
 
+	// validate input API args
 	vars, err := wdp.ValidateApiArgs(r)
 	if err != nil {
 		log.Print("error validating API arguments: ", err)
 	}
 
+	// TODO: update this to get data from db
 	var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
 	err = wdp.RemoveOldContents(yesterday, "data/")
 	if err != nil {
 		log.Print("error removing contents of data folder: ", err)
 	}
 
+	// TODO: remove this
 	fname := fmt.Sprintf("./data/synthetic_data_%s_%s.csv", vars.Lang, yesterday)
 	outname := fmt.Sprintf("./data/output_%s_%s.csv", vars.Lang, yesterday)
 	outnameDP := fmt.Sprintf("./data/dp_output_%s_%s.csv", vars.Lang, yesterday)
 
+	// TODO: update this to get data from db
 	_, err = os.Stat(fname)
 	if os.IsNotExist(err) {
 		err = wdp.InitializeSyntheticData(yesterday, vars.Lang)
@@ -97,12 +103,13 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
+	// TODO: udpate this to get data from db
 	results, err := wdp.CreateOutputStruct(outname, outnameDP, vars)
 	if err != nil {
 		log.Print("creation of output struct failed: %v", err)
 	}
 
+	// create outward facing parameters
 	var params outParams
 	params.Lang = vars.Lang
 	params.Eps = vars.Epsilon
@@ -112,10 +119,12 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 	params.PropWithin = vars.PropWithin
 	params.AggregateThreshold = wdp.AggregationThreshold(vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin)
 
+	// put outward facing parameters and results into one struct
 	var out output
 	out.Params = params
 	out.Results = results
 
+	// send the struct back as a json file
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(out)
 }

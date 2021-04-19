@@ -74,7 +74,7 @@ func DBConnection() (*sql.DB, error) {
         log.Printf("Errors %s pinging DB", err)
         return nil, err
     }
-    log.Printf("Connected to DB %s successfully\n", dbName)
+    log.Printf("Connected to DB successfully\n")
     return db, nil
 }
 
@@ -83,7 +83,7 @@ func CreateTable(db *sql.DB, tbl_name string) error {
 	if strings.HasPrefix(tbl_name, "data_") {
     	query = `CREATE TABLE IF NOT EXISTS ` + tbl_name + `(id int primary key auto_increment, name text)`
     } else if strings.HasPrefix(tbl_name, "output_") {
-    	query = `CREATE TABLE IF NOT EXISTS ` + tbl_name + `(page text, views int)`
+    	query = `CREATE TABLE IF NOT EXISTS ` + tbl_name + `(Name text, Views int, Epsilon float, Delta float)`
     } else {
     	return fmt.Errorf("input to create table was not properly formated: %s", tbl_name)
     }

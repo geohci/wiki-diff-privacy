@@ -1,3 +1,7 @@
+// Functions originally written by Isaac Johnson in Python and adapted to Go by
+// Hal Triedman. These functions provide context to the DP outputs as they are 
+// displayed to the end user.
+
 package wdp
 
 import "math"
