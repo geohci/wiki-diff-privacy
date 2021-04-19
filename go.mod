@@ -15,6 +15,7 @@ require (
 	github.com/google/differential-privacy/go v0.0.0-20210412184833-f3e565a14b7d // indirect
 	github.com/google/differential-privacy/privacy-on-beam v0.0.0-20210412184833-f3e565a14b7d // indirect
 	github.com/htried/wiki-diff-privacy/wdp v0.0.0-00010101000000-000000000000 // indirect
+	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/linkedin/goavro v2.1.0+incompatible // indirect
 	github.com/spf13/cobra v1.1.3 // indirect
 	golang.org/x/mod v0.4.2 // indirect

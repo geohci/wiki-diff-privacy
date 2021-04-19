@@ -9,7 +9,7 @@
 	<link href="https://tools-static.wmflabs.org/fontcdn/css?family=Merriweather:400,400italic,700,700italic&subset=latin" rel="stylesheet" type="text/css">
 	<link href='https://tools-static.wmflabs.org/fontcdn/css?family=Lato:400,400italic,700,700italic&subset=latin' rel='stylesheet' type='text/css'>
 	<link href="https://tools-static.wmflabs.org/cdnjs/ajax/libs/datatables/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
-	<link rel="stylesheet" href="./static/style.css" />
+	<link rel="stylesheet" href="../static/style.css" type="text/css">
 	<style>
 		.below-threshold {
 		  opacity: 0.5;
@@ -25,7 +25,7 @@
 
 	<div id="origin_bar">
 		<div class="boxwidth--1-1 padded--left padded--right">
-			<a href="https://research.wikimedia.org/" class="origin_title"><img src="./static/Wikimedia-Foundation-logo.svg" alt="Wikimedia Foundation logo" />Wikimedia Research</a>
+			<a href="https://research.wikimedia.org/" class="origin_title"><img src="./static/Wikimedia-Foundation-logo.svg" alt="Wikimedia Foundation logo" />Wikimedia Privacy and Research</a>
 		</div>
 	</div>
 
@@ -42,7 +42,7 @@
 							<a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use" target="_blank" rel="noopener">Terms of Use</a>.</p>
 					</div>
 					<div class="description padded--right">
-						<p>This tool showcases how different approaches to differential privacy might affect top-viewed lists. In reality, this approach would likely be applied to e.g., pageviews by country, but here we use the top-viewed articles in a wiki (public data) as a proxy.</p>
+						<p>This tool showcases how different approaches to differential privacy might affect top-viewed lists. In reality, this approach would likely be applied to e.g., pageviews by country, but here we use the top-viewed articles in a wiki (public data) as a proxy. This is a clone of an <a href="https://diff-privacy.toolforge.org/" target="_blank" rel="noopener">earlier exploration of differential privacy</a>, but is built using Golang and Apache Beam's differential privacy library, rather than Python, Flask, and a hand-coded version of differential privacy.</p>
 					</div>
 				</div>
 			</header>
@@ -64,37 +64,37 @@
 					<form action="#diff-privacy">
 						<div class="cols cols4">
 							<div class="col col1">
-								{% if lang %}
+								{{ if .Lang }}
 								<label class="placeholder"><span class="field_name">Language code*</span>
-									<input type="text" value="{{lang}}" placeholder="Placeholder text" id="lang"/>
+									<input type="text" value="{{ .Lang }}" placeholder="Placeholder text" id="lang"/>
 								</label>
-								{% else %}
+								{{ else }}
 								<label class="placeholder"><span class="field_name">Language code*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="lang"/>
 								</label>
-								{% endif %}
+								{{ end }}
 							</div>
 							<div class="col col1">
-								{% if eps %}
+								{{ if .Epsilon }}
 								<label class="placeholder"><span class="field_name">Epsilon*</span>
-									<input type="text" value="{{eps}}" placeholder="Placeholder text" id="eps"/>
+									<input type="text" value="{{ .Epsilon }}" placeholder="Placeholder text" id="eps"/>
 								</label>
-								{% else %}
+								{{ else }}
 								<label class="placeholder"><span class="field_name">Epsilon*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="eps"/>
 								</label>
-								{% endif %}
+								{{ end }}
 							</div>
 							<div class="col col1">
-								{% if sensitivity %}
+								{{ if .Sensitivity }}
 								<label class="placeholder"><span class="field_name">Sensitivity*</span>
-									<input type="text" value="{{sensitivity}}" placeholder="Placeholder text" id="sensitivity"/>
+									<input type="text" value="{{ .Sensitivity }}" placeholder="Placeholder text" id="sensitivity"/>
 								</label>
-								{% else %}
+								{{ else }}
 								<label class="placeholder"><span class="field_name">Sensitivity*</span>
 									<input type="text" value="" placeholder="Placeholder text" id="sensitivity"/>
 								</label>
-								{% endif %}
+								{{ end }}
 							</div>
 							<div class="col col1">
 								<span class="field_name"></span>
@@ -112,11 +112,11 @@
 
 	<footer id="tool_footer">
 		<div id="tool_footer-in" class="boxwidth--1-1 padded--left padded--right">
-			<p>Experimental tool developed by <span class="tool-author"><a href="https://meta.wikipedia.org/wiki/User:Isaac_(WMF)">Isaac (WMF)</a> as part of <a href="https://research.wikimedia.org/">Wikimedia Research</a></span>.</p>
+			<p>Experimental tool developed by <span class="tool-author"><a href="https://meta.wikipedia.org/wiki/User:Isaac_(WMF)">Isaac (WMF)</a> and <a href="https://haltriedman.com">Hal</a> as part of <a href="https://research.wikimedia.org/">Wikimedia Research</a></span> and the <a href="https://security.wikimedia.org/">Privacy Engineering</a> team.</p>
 			<ul>
-				<li><a href="https://github.com/geohci/wiki-diff-privacy">View Source</a></li>
+				<li><a href="https://github.com/htried/wiki-diff-privacy">View Source</a></li>
 				<li><a href="https://phabricator.wikimedia.org/T267283">Phab</a></li>
-				<li><a href="https://github.com/geohci/wiki-diff-privacy/blob/main/README.md#license">License</a></li>
+				<li><a href="https://github.com/htried/wiki-diff-privacy/blob/main/README.md#license">License</a></li>
 			</ul>
 		</div>
 	</footer>
@@ -149,8 +149,9 @@
 
 		var render_results = function(data) {
 			$("#results").empty();
-			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qual-eps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct).</p>");
-			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['prop_within'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregate-threshold'] + ".</p>");
+			console.log(data["results"])
+			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qualEps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct).</p>");
+			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['propWithin'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregateThreshold'] + ".</p>");
 			if ("Error" in data) {
 				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");
 			}
@@ -192,7 +193,7 @@
 					"paging": false,
 					"order": [1, 'desc'],
 					"createdRow": function(row, data, dataIndex) {
-						if ( data['Aggregate?'] == 'Yes' ) {
+						if ( data['Aggregate?'] == 1) {
 							$(row).addClass('below-threshold');
 						}
 					}
@@ -201,8 +202,8 @@
 		}
 
 		function queryDiffPrivate() {
-			//var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
-			var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			var queryUrl = "http://127.0.0.1:5000/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			// var queryUrl = "https://diff-privacy.toolforge.org/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }
