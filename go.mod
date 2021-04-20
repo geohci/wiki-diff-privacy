@@ -10,6 +10,7 @@ require (
 	cloud.google.com/go/pubsub v1.10.2 // indirect
 	cloud.google.com/go/storage v1.14.0 // indirect
 	github.com/apache/beam v2.28.0+incompatible // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/differential-privacy/go v0.0.0-20210412184833-f3e565a14b7d // indirect

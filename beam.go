@@ -7,21 +7,21 @@
 package main
 
 import (
-	"fmt"
-	"reflect"
-	"time"
-	"strings"
-	"strconv"
-	"log"
 	"context"
+	"fmt"
+	"log"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/htried/wiki-diff-privacy/wdp"
 
 	"github.com/apache/beam/sdks/go/pkg/beam"
-	"github.com/apache/beam/sdks/go/pkg/beam/runners/direct"
-	"github.com/google/differential-privacy/privacy-on-beam/pbeam"
-	"github.com/apache/beam/sdks/go/pkg/beam/transforms/stats"
 	"github.com/apache/beam/sdks/go/pkg/beam/io/databaseio"
+	"github.com/apache/beam/sdks/go/pkg/beam/runners/direct"
+	"github.com/apache/beam/sdks/go/pkg/beam/transforms/stats"
+	"github.com/google/differential-privacy/privacy-on-beam/pbeam"
 )
 
 // initialize functions and types to be referenced in beam
@@ -33,10 +33,9 @@ func init() {
 
 // struct to represent 1 synthetic pageview
 type pageView struct {
-	ID 		string 		// a synthetic "unique id" for the page view
-	Name 	string 		// the name of the page visited
+	ID   string // a synthetic "unique id" for the page view
+	Name string // the name of the page visited
 }
-
 
 // the function that runs when `go run beam.go` is typed into the command line
 // it iterates through each language code and runs the pipeline on it
@@ -61,12 +60,12 @@ func processLanguage(lang string) error {
 
 	// get the DSN
 	dsn, err := wdp.DSN("wdp")
-    if err != nil {
-    	log.Printf("Error %s when getting dbname\n", err)
-    	return err
-    }
+	if err != nil {
+		log.Printf("Error %s when getting dbname\n", err)
+		return err
+	}
 
-    // initialize the Beam pipeline
+	// initialize the Beam pipeline
 	beam.Init()
 	p := beam.NewPipeline()
 	s := p.Root()
@@ -89,8 +88,8 @@ func processLanguage(lang string) error {
 	}
 
 	// get the name of the table from the input language and date
-    var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
-    lang = strings.ReplaceAll(lang, "-", "_")
+	var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
+	lang = strings.ReplaceAll(lang, "-", "_")
 
 	tbl_name := fmt.Sprintf("output_%s_%s", lang, yesterday)
 
@@ -121,15 +120,15 @@ func readInput(s beam.Scope, dsn, lang string) beam.PCollection {
 	s = s.Scope("readInput")
 
 	// get the name of the table from the input language and date
-    var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
-    lang = strings.ReplaceAll(lang, "-", "_")
-    tbl_name := fmt.Sprintf("data_%s_%s", lang, yesterday)
+	var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
+	lang = strings.ReplaceAll(lang, "-", "_")
+	tbl_name := fmt.Sprintf("data_%s_%s", lang, yesterday)
 
-    // read from the database into a PCollection of pageView structs
+	// read from the database into a PCollection of pageView structs
 	return databaseio.Read(s, "mysql", dsn, tbl_name, reflect.TypeOf(pageView{}))
 }
 
-// a function that uses Beam to count the raw number of pageviews for each of 
+// a function that uses Beam to count the raw number of pageviews for each of
 // the top 50 pages viewed in a given language project
 func countPageViews(s beam.Scope, col beam.PCollection) beam.PCollection {
 	s = s.Scope("countPageViews")
@@ -139,7 +138,7 @@ func countPageViews(s beam.Scope, col beam.PCollection) beam.PCollection {
 	pageviews := beam.ParDo(s, extractPage, col)
 
 	// count the number of times each page shows up in pageviews
-	// yields PCollection<string,int> 
+	// yields PCollection<string,int>
 	counted := stats.Count(s, pageviews)
 
 	// create constants for "epsilon" and "delta". these are both -1 to signify
@@ -151,10 +150,10 @@ func countPageViews(s beam.Scope, col beam.PCollection) beam.PCollection {
 	// yields PCollection<wdp.TableRow>
 	out := beam.ParDo(s, func(k string, v int, epsilon, delta float64, emit func(out wdp.TableRow)) {
 		emit(wdp.TableRow{
-			Name: k,
-			Views: v,
+			Name:    k,
+			Views:   v,
 			Epsilon: epsilon,
-			Delta: delta,
+			Delta:   delta,
 		})
 	}, counted, beam.SideInput{Input: eps}, beam.SideInput{Input: del})
 	return out
@@ -176,10 +175,10 @@ func privateCountPageViews(s beam.Scope, col beam.PCollection, epsilon, delta fl
 	pageviews := pbeam.ParDo(s, extractPage, pCol)
 
 	// privately count the number of times each page shows up in pageviews
-	// yields PrivatePCollection<string,int> 
+	// yields PrivatePCollection<string,int>
 	counted := pbeam.Count(s, pageviews, pbeam.CountParams{ // defaults to Laplace noise
-		MaxPartitionsContributed:	1, 					// In the scheme I've constructed, each visitor visits 1x per day
-		MaxValue: 					1, 					// And they can visit a maximum of 1 page
+		MaxPartitionsContributed: 1, // In the scheme I've constructed, each visitor visits 1x per day
+		MaxValue:                 1, // And they can visit a maximum of 1 page
 	})
 
 	// create constants for epsilon and delta
@@ -190,16 +189,15 @@ func privateCountPageViews(s beam.Scope, col beam.PCollection, epsilon, delta fl
 	// yields PCollection<wdp.TableRow>
 	out := beam.ParDo(s, func(k string, v int64, epsilon, delta float64, emit func(out wdp.TableRow)) {
 		emit(wdp.TableRow{
-			Name: k,
-			Views: int(v),
+			Name:    k,
+			Views:   int(v),
 			Epsilon: epsilon,
-			Delta: delta,
+			Delta:   delta,
 		})
 	}, counted, beam.SideInput{Input: eps}, beam.SideInput{Input: del})
 
 	return out
 }
-
 
 // a simple wrapper DoFn for extracting a page name from a pageView
 func extractPage(p pageView) string {

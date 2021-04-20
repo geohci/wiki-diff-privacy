@@ -1,32 +1,33 @@
 package main
 
 import (
-    "net/http"
-    "log"
-    "html/template"
-  	"encoding/json"
-  	"database/sql"
- 	_"github.com/go-sql-driver/mysql"
+	"database/sql"
+	"encoding/json"
+	"html/template"
+	"log"
+	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/htried/wiki-diff-privacy/wdp"
 )
 
 // parameters to send to the client for display
 type outParams struct {
-	Lang 				string	`json:"lang"`
-	Eps 				float64 `json:"eps"`
-	Delta 				float64 `json:"delta"`
-	Sensitivity			int 	`json:"sensitivity"`
-	QualEps 			float64 `json:"qual-eps"`		
-	Alpha 				float64 `json:"alpha"`
-	PropWithin 			float64 `json:"prop-within"`
-	AggregateThreshold	float64 `json:"aggregate-threshold"`
+	Lang               string  `json:"lang"`
+	Eps                float64 `json:"eps"`
+	Delta              float64 `json:"delta"`
+	Sensitivity        int     `json:"sensitivity"`
+	QualEps            float64 `json:"qual-eps"`
+	Alpha              float64 `json:"alpha"`
+	PropWithin         float64 `json:"prop-within"`
+	AggregateThreshold float64 `json:"aggregate-threshold"`
 }
 
 // struct that sends back all outbound data
 type output struct {
-	Params		outParams 					`json:"params"`
-	Results 	map[string]map[string]int 	`json:"results"`
+	Params  outParams                 `json:"params"`
+	Results map[string]map[string]int `json:"results"`
 }
 
 // global variables for db and error
@@ -96,7 +97,6 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(out)
 }
 
-
 // get DB connection, bind functions to paths, and start listener
 func main() {
 	// connect to the DB
@@ -106,8 +106,8 @@ func main() {
 	}
 
 	// undo at the end
-    http.HandleFunc("/", Index)
-    http.HandleFunc("/api/v1/pageviews", PageViews)
-    // http.HandleFunc("/", PageViews)
-    log.Fatal(http.ListenAndServe(":5000", nil))
+	http.HandleFunc("/", Index)
+	http.HandleFunc("/api/v1/pageviews", PageViews)
+	// http.HandleFunc("/", PageViews)
+	log.Fatal(http.ListenAndServe(":5000", nil))
 }
