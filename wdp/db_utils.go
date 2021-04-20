@@ -57,8 +57,9 @@ func DBConnection() (*sql.DB, error) {
     defer cancelfunc()
 
     // create DB if not exists
-    // res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp")
-    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS s54717__wdp")
+    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
+    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp") // LOCAL
+    // res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS s54717__wdp") // TOOLFORGE
     if err != nil {
         log.Printf("Error %s when creating DB\n", err)
         return nil, err
@@ -77,8 +78,9 @@ func DBConnection() (*sql.DB, error) {
     // PART 2: CONNECT TO EXISTING DB
 
     // get DSN again, this time for the specific DB we just made
-    // dbName, err = DSN("wdp")
-    dbName, err = DSN("s54717__wdp")
+    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
+    dbName, err = DSN("wdp") // LOCAL
+    // dbName, err = DSN("s54717__wdp") // TOOLFORGE
     if err != nil {
     	log.Printf("Error %s when getting dbname\n", err)
     	return nil, err

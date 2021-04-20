@@ -113,6 +113,8 @@ func main() {
 
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/api/v1/pageviews", PageViews)
-	// log.Fatal(http.ListenAndServe(":5000", nil))
-	log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil))
+
+	// NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
+	log.Fatal(http.ListenAndServe(":8000", nil)) // LOCAL
+	// log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil)) // TOOLFORGE
 }
