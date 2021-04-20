@@ -8,11 +8,9 @@ import (
     "net/http"
     "io"
     "encoding/json"
-  	"strconv"
   	"time"
-  	"os"
-  	"encoding/csv"
   	"sort"
+  	"math"
 )
 
 type Article struct {
@@ -42,10 +40,9 @@ type TableRow struct {
 	Delta 	float64 	// delta used for calculating the number of views (-1 is none)
 }
 
-// TODO: hone these in
 // various configurations of epsilon and delta to compute the view count per page with
 var Epsilon = []float64{0.1, 0.5, 1, 5}
-var Delta = []float64{math.Pow10(-4), math.Pow10(-2), 0.1, 0.5}
+var Delta = []float64{math.Pow10(-8), math.Pow10(-7), math.Pow10(-6)}
 
 // get the top 50 highest-performing articles for a given language lang from
 // yesterday or the day before
@@ -112,11 +109,11 @@ func CreateOutputStruct(normalCount, dpCount []TableRow, vars PageVars) map[stri
 	})
 
 	// for each normal article
-	for i, art := range articles {
+	for i, art := range normalCount {
 		// create a map and input its rank and number of views
 		articleEntry := make(map[string]int)
 		output[art.Name] = articleEntry
-		output[art.Name]["gt-rank"] = i
+		output[art.Name]["gt-rank"] = i + 1
 		output[art.Name]["gt-views"] = art.Views
 		
 		// add all these -1 entries to the map, because some counts may be too
@@ -126,10 +123,13 @@ func CreateOutputStruct(normalCount, dpCount []TableRow, vars PageVars) map[stri
 		output[art.Name]["do-aggregate"] = -1
 	}
 
+	// log.Print(output)
+
 	// for each DP-altered article
-	for i, art := range articlesDP {
+	for i, art := range dpCount {
+		// log.Print(art)
 		// add the DP rank, DP views, and whether or not you should aggregate
-		output[art.Name]["dp-rank"] = i
+		output[art.Name]["dp-rank"] = i + 1
 		output[art.Name]["dp-views"] = art.Views
 		output[art.Name]["do-aggregate"] = DoAggregate(art.Views, vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin)
 	}

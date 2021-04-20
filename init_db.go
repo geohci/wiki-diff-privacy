@@ -12,7 +12,8 @@ import (
     "strings"
 )
 
-func main() {  
+func main() {
+	start := time.Now()
 	// get a connection to the db
     db, err := wdp.DBConnection()
     if err != nil {
@@ -55,6 +56,8 @@ func main() {
 		}
 
 		// batch insert faux data into the synthetic data table
-	    err = wdp.BatchInsert(db, tbl_name, topFiftyArticles)
+	    err = wdp.BatchInsert(db, data_tbl_name, topFiftyArticles)
+
+	    log.Printf("Time to init all dbs: %v seconds\n", time.Now().Sub(start).Seconds())
     }
 }

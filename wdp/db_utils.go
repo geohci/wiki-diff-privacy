@@ -69,7 +69,7 @@ func DBConnection() (*sql.DB, error) {
         log.Printf("Error %s when fetching rows", err)
         return nil, err
     }
-    log.Print("rows affected %d\n", no)
+    log.Printf("rows affected %d\n", no)
 
     db.Close()
 
@@ -91,7 +91,9 @@ func DBConnection() (*sql.DB, error) {
 
     // config stuff — TODO: this might have to go
     db.SetMaxOpenConns(30)
-    db.SetMaxIdleConns(30)
+    // db.SetMaxIdleConns(30)
+    db.SetMaxIdleConns(0)
+
 
     // set context
     ctx, cancelfunc = context.WithTimeout(context.Background(), 5*time.Second)
@@ -137,7 +139,7 @@ func CreateTable(db *sql.DB, tbl_name string) error {
         return err
     }
 
-    log.Printf("Rows affected when creating table: %d", rows)
+    log.Printf("Rows affected when creating table: %d\n", rows)
     return nil
 }
 
@@ -234,25 +236,30 @@ func Query(db *sql.DB, lang string, epsilon, delta float64) ([]TableRow, []Table
     var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
     var tbl_name = fmt.Sprintf("output_%s_%s", lang, yesterday)
 
-    // create the query
-    var query = `SELECT * FROM ` + tbl_name + ` WHERE Epsilon IN ((?), (?)) AND Delta IN ((?), (?))`
+    // create the query -- use the mysql round function to get around the fact that floats are imprecise
+    var query = `SELECT * FROM ` + tbl_name + ` WHERE (Epsilon=-1 AND Delta=-1) OR (ROUND(Epsilon, 1)=ROUND(?, 1) AND ROUND(Delta, 8)=ROUND(?, 8))`
 
     // set context
     ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancelfunc()
 
     // query the table (-1 is the code for normal, so we get -1 and the input epsilon and delta)
-    res, err := db.QueryContext(ctx, query, -1, epsilon, -1, delta)
+    res, err := db.QueryContext(ctx, query, epsilon, delta)
+    // res, err := db.Query(query, epsilon, delta)
+    // res, err := db.Query(query)
     if err != nil {
-        log.Printf("Error %s when preparing SQL statement", err)
+        log.Printf("Error %s when conducting query", err)
         return normalCount, dpCount, err
     }
-
-    var row TableRow
+    defer res.Close()
+    
 
     // iterate through results
     for res.Next() {
-        res.Scan(&row)
+        var row TableRow
+
+        res.Scan(&row.Name, &row.Views, &row.Epsilon, &row.Delta)
+        // log.Print(row)
 
         // if epsilon or delta is -1, add to the normal list; otherwise, add to the dpcount list
         if row.Epsilon == float64(-1) || row.Delta == float64(-1) {

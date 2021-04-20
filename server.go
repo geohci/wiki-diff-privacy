@@ -1,17 +1,9 @@
 package main
 
 import (
-    "fmt"
     "net/http"
     "log"
     "html/template"
-  	"strings"
-  	"time"
-  	"os"
-  	"reflect"
-  	"context"
-  	"regexp"
-  	"math"
   	"encoding/json"
   	"database/sql"
  	_"github.com/go-sql-driver/mysql"

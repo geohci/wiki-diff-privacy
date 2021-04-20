@@ -6,10 +6,12 @@ package main
 
 import (
 	"log"
+    "time"
 	"github.com/htried/wiki-diff-privacy/wdp"
 )
 
 func main() {
+    start := time.Now()
     // get a connection to the db
     db, err := wdp.DBConnection()
     if err != nil {
@@ -32,4 +34,6 @@ func main() {
     	log.Printf("Error %s when dropping data from previous days", err)
     	return
     }
+
+    log.Printf("Time to clean up all databases: %v seconds\n", lang, time.Now().Sub(start).Seconds())
 }

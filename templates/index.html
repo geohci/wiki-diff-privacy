@@ -1,5 +1,3 @@
-<!-- TODO: UPDATE THIS TO HAVE DROPDOWN MENUS FOR LANGUAGE, EPSILON, AND DELTA -->
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -58,34 +56,62 @@
 				<section class="text">
 					<p>This tool fetches the top-viewed articles for a given wiki from yesterday. First you have the actual data -- i.e. accurate counts without any noise added. Then you have the data after differential privacy (DP) has been applied (specifically noise drawn from a <a href="https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf#section.3.3">Laplace distribution</a>).</p>
 					<p>You can play around with the different hyperparameters to see how it affects the results. See <a href="https://research.fb.com/blog/2020/06/protecting-privacy-in-facebook-mobility-data-during-the-covid-19-response/">this Facebook blogpost</a> for a good worked example.</p>
-					<p><b>Language code</b>: which Wikipedia language to query -- e.g., en for English Wikipedia.</p>
+					<p><b>Language</b>: which Wikipedia language to query.</p>
 					<p><b>Epsilon (ε)</b>: privacy parameter. Default to 1 but the smaller you make it, the more privacy-preserving.</p>
+					<p><b>Delta (δ)</b>: the probability of information about the database accidentally being leaked. The smaller you make it, the less likely a leak is to happen. Ideally, the value should be less than the inverse of the size of the database.</p>
 					<p><b>Sensitivity</b>: the maximum amount that any individual can add to the result. For example, if this is daily user pageviews, 800 would be appropriate as IP+UA hashes that are associated with more than 800 pageviews in a day are labeled as "automated".</p>
 				</section>
 				<section class="form">
 					<form action="#diff-privacy">
-						<div class="cols cols4">
+						<div class="cols cols5">
 							<div class="col col1">
-								{{ if .Lang }}
 								<label class="placeholder"><span class="field_name">Language code*</span>
-									<input type="text" value="{{ .Lang }}" placeholder="Placeholder text" id="lang"/>
+									<select id="lang" name="Language">
+										<!-- <option value="en">English</option> -->
+										<!-- <option value="es">Español (Spanish)</option> -->
+										<!-- <option value="fr">Français (French)</option> -->
+										<!-- <option value="de">Deutsch (German)</option> -->
+										<!-- <option value="zh">中文 (Chinese)</option> -->
+										<!-- <option value="ru">Русский (Russian)</option> -->
+										<!-- <option value="pt">Português (Portuguese)</option> -->
+										<!-- <option value="it">Italiano (Italian)</option> -->
+										<option value="ar" selected>العربية (Arabic)</option>
+										<!-- <option value="ja">日本語 (Japanese)</option> -->
+										<option value="nl">Nederlands (Dutch)</option>
+										<option value="pl">Polski (Polish)</option>
+										<option value="uk">Українська (Ukrainian)</option>
+										<option value="sv">Svenska (Sweedish)</option>
+										<option value="vi">Tiếng Việt (Vietnamese)</option>
+										<option value="fa">فارسی (Persian)</option>
+										<option value="tr">Türkçe (Turkish)</option>
+										<option value="he">עברית (Hebrew)</option>
+										<option value="cs">Čeština (Czech)</option>
+										<option value="id">Bahasa Indonesia (Indonesian)</option>
+										<option value="ko">한국어 (Korean)</option>
+										<option value="fi">Suomi (Finnish)</option>
+									</select>
 								</label>
-								{{ else }}
-								<label class="placeholder"><span class="field_name">Language code*</span>
-									<input type="text" value="" placeholder="Placeholder text" id="lang"/>
-								</label>
-								{{ end }}
 							</div>
 							<div class="col col1">
-								{{ if .Epsilon }}
 								<label class="placeholder"><span class="field_name">Epsilon*</span>
-									<input type="text" value="{{ .Epsilon }}" placeholder="Placeholder text" id="eps"/>
+									<select id="eps" name="eps">
+										<option value="0.1">0.1</option>
+										<option value="0.5">0.5</option>
+										<option value="1" selected>1</option>
+										<option value="5">5</option>
+									</select>
 								</label>
-								{{ else }}
-								<label class="placeholder"><span class="field_name">Epsilon*</span>
-									<input type="text" value="" placeholder="Placeholder text" id="eps"/>
+							</div>
+							<div class="col col1">
+								<label class="placeholder"><span class="field_name">Delta*</span>
+									<select id="delta" name="delta">
+										<option value="0.00000001">10E-8</option>
+										<option value="0.0000001">10E-7</option>
+										<option value="0.000001" selected>10E-6</option>
+										<!-- <option value=0.00001>10E-5</option>
+										<option value=0.0001>10E-4</option> -->
+									</select>
 								</label>
-								{{ end }}
 							</div>
 							<div class="col col1">
 								{{ if .Sensitivity }}
@@ -152,7 +178,8 @@
 		var render_results = function(data) {
 			$("#results").empty();
 			console.log(data["results"])
-			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qualEps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct).</p>");
+			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qualEps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct). Broadly speaking, epsilon is a value that provides a ceiling on how much the likelihood of single output (in this case, a particular configuration of pageview counts) could increase if a single entry were added or removed from the database.</p>");
+			$("#results").append("<br><p>Explanation for delta=" + document.getElementById('delta').value + ": delta is the probability of information being accidentally leaked. If delta=0, any output of this database is going to be negligibly different (to the scale of epsilon) from an adjacent database (i.e. with one entry added or removed). If delta is non-zero, it ensures that for all databases X and Y, the absolute privacy loss of a calculation M() will be less than or equal to epsilon with a probability of 1 - delta. If delta is non-zero, we want its value to be smaller than the inverse of any polynomial in the size of the database X (i.e. delta < 1 / ||X||).</p>")
 			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['propWithin'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregateThreshold'] + ".</p>");
 			if ("Error" in data) {
 				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");

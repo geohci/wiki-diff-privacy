@@ -9,7 +9,6 @@ package main
 import (
 	"fmt"
 	"reflect"
-	"math"
 	"time"
 	"strings"
 	"strconv"
@@ -28,7 +27,7 @@ import (
 // initialize functions and types to be referenced in beam
 func init() {
 	beam.RegisterType(reflect.TypeOf((*pageView)(nil)))
-	beam.RegisterType(reflect.TypeOf((*output)(nil)))
+	beam.RegisterType(reflect.TypeOf((*wdp.TableRow)(nil)))
 	beam.RegisterFunction(extractPage)
 }
 
@@ -42,7 +41,7 @@ type pageView struct {
 // the function that runs when `go run beam.go` is typed into the command line
 // it iterates through each language code and runs the pipeline on it
 func main() {
-	log.Printf("len: %v\n", len(wdp.LanguageCodes))
+	start := time.Now()
 	for _, lang := range wdp.LanguageCodes {
 		err := processLanguage(lang)
 		if err != nil {
@@ -50,10 +49,12 @@ func main() {
 			return
 		}
 	}
+	log.Printf("Time to count all languages: %v seconds\n", time.Now().Sub(start).Seconds())
 }
 
 // create an output db for an individual language
 func processLanguage(lang string) error {
+	start := time.Now()
 
 	// make a map that goes from epsilon/delta parameters --> output PCollections
 	dpMap := make(map[string]beam.PCollection)
@@ -87,6 +88,12 @@ func processLanguage(lang string) error {
 		}
 	}
 
+	// get the name of the table from the input language and date
+    var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
+    lang = strings.ReplaceAll(lang, "-", "_")
+
+	tbl_name := fmt.Sprintf("output_%s_%s", lang, yesterday)
+
 	// write normal count to db
 	databaseio.Write(s, "mysql", dsn, tbl_name, []string{}, normalCount)
 
@@ -102,6 +109,8 @@ func processLanguage(lang string) error {
 		log.Print("execution of pipeline failed: %v", err)
 		return err
 	}
+
+	log.Printf("Time to do all counts of language %s: %v seconds\n", lang, time.Now().Sub(start).Seconds())
 
 	return nil
 }
