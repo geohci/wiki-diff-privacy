@@ -111,9 +111,8 @@ func main() {
 		panic(err.Error())
 	}
 
-	// undo at the end
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/api/v1/pageviews", PageViews)
-	// http.HandleFunc("/", PageViews)
-	log.Fatal(http.ListenAndServe(":5000", nil))
+	// log.Fatal(http.ListenAndServe(":5000", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil))
 }

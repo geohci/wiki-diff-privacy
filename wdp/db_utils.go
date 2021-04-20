@@ -57,7 +57,8 @@ func DBConnection() (*sql.DB, error) {
     defer cancelfunc()
 
     // create DB if not exists
-    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp")
+    // res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp")
+    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS s54717__wdp")
     if err != nil {
         log.Printf("Error %s when creating DB\n", err)
         return nil, err
@@ -76,7 +77,8 @@ func DBConnection() (*sql.DB, error) {
     // PART 2: CONNECT TO EXISTING DB
 
     // get DSN again, this time for the specific DB we just made
-    dbName, err = DSN("wdp")
+    // dbName, err = DSN("wdp")
+    dbName, err = DSN("s54717__wdp")
     if err != nil {
     	log.Printf("Error %s when getting dbname\n", err)
     	return nil, err
