@@ -22,7 +22,7 @@ var LanguageCodes = []string{"ar", "pl", "nl", "uk", "sv", "vi", "fa", "tr", "he
 // var LanguageCodes = []string{"en", "es", "fr", "de", "zh", "ru", "pt", "it", "ar", "ja", "nl", "pl", "tr", "id", "fa"}
 
 // test list
-// var LanguageCodes = []string{"fa"}
+// var LanguageCodes = []string{"ko", "fi"}
 
 
 type PageVars struct {
@@ -115,7 +115,7 @@ func validatePropWithin(propWithin float64) bool {
 func ValidateApiArgs(r *http.Request) (PageVars, error) {
 	request := r.URL.Query()
 
-	var pvs = PageVars{Lang:			"en",
+	var pvs = PageVars{Lang:			"ar",
 					   MinCount: 		int(0),
 					   Epsilon: 		float64(1),
 					   Delta: 			float64(0.000001),

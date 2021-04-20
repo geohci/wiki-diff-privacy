@@ -29,6 +29,7 @@ func main() {
 
 	// for each language
 	for _, lang := range wdp.LanguageCodes {
+		langStart := time.Now()
 
 		// replace hypens with underscores (for syntactical reasons)
 		lang = strings.ReplaceAll(lang, "-", "_")
@@ -59,6 +60,8 @@ func main() {
 		// batch insert faux data into the synthetic data table
 		err = wdp.BatchInsert(db, data_tbl_name, topFiftyArticles)
 
-		log.Printf("Time to init all dbs: %v seconds\n", time.Now().Sub(start).Seconds())
+		log.Printf("Time to init %s dbs: %v seconds\n", lang, time.Now().Sub(langStart).Seconds())
+
 	}
+	log.Printf("Time to init all dbs: %v seconds\n", time.Now().Sub(start).Seconds())
 }

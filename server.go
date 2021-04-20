@@ -76,21 +76,27 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 
 	// feed those into a util function to format them correctly
 	results := wdp.CreateOutputStruct(normalCount, dpCount, vars)
+	log.Printf("qual eps: %d\n", wdp.QualEps(vars.Epsilon, 0.5))
+	log.Printf("aggregation threshold: %d\n", wdp.AggregationThreshold(vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin))
 
 	// create outward facing parameters
-	var params outParams
-	params.Lang = vars.Lang
-	params.Eps = vars.Epsilon
-	params.Sensitivity = vars.Sensitivity
-	params.QualEps = wdp.QualEps(vars.Epsilon, 0.5)
-	params.Alpha = vars.Alpha
-	params.PropWithin = vars.PropWithin
-	params.AggregateThreshold = wdp.AggregationThreshold(vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin)
+	var params = outParams{
+		Lang: 				vars.Lang,
+		Eps: 				vars.Epsilon,
+		Sensitivity: 		vars.Sensitivity,
+		QualEps: 			wdp.QualEps(vars.Epsilon, 0.5),
+		Alpha: 				vars.Alpha,
+		PropWithin: 		vars.PropWithin,
+		AggregateThreshold: wdp.AggregationThreshold(vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin),
+	}
 
 	// put outward facing parameters and results into one struct
-	var out output
-	out.Params = params
-	out.Results = results
+	var out = output{
+		Params: 	params,
+		Results:	results,
+	}
+	// out.Params = params
+	// out.Results = results
 
 	// send the struct back as a json file
 	w.Header().Set("Content-Type", "application/json")

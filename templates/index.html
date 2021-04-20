@@ -105,9 +105,10 @@
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Delta*</span>
 									<select id="delta" name="delta">
+										<option value="0.000000001" selected>10E-9</option>
 										<option value="0.00000001">10E-8</option>
 										<option value="0.0000001">10E-7</option>
-										<option value="0.000001" selected>10E-6</option>
+										<option value="0.000001">10E-6</option>
 										<!-- <option value=0.00001>10E-5</option>
 										<option value=0.0001>10E-4</option> -->
 									</select>
@@ -178,9 +179,9 @@
 		var render_results = function(data) {
 			$("#results").empty();
 			console.log(data["results"])
-			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qualEps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct). Broadly speaking, epsilon is a value that provides a ceiling on how much the likelihood of single output (in this case, a particular configuration of pageview counts) could increase if a single entry were added or removed from the database.</p>");
+			$("#results").append("<br><p>Explanation for epsilon=" + document.getElementById('eps').value + ": if someone was uncertain that a given individual's pageviews were included in this data (50% probability), they could be at most " + Number(Math.round((100 * data['params']['qual-eps']) + 'e2') + 'e-2') + "% certain after viewing data generated under these parameters (assuming the sensitivity is correct). Broadly speaking, epsilon is a value that provides a ceiling on how much the likelihood of single output (in this case, a particular configuration of pageview counts) could increase if a single entry were added or removed from the database.</p>");
 			$("#results").append("<br><p>Explanation for delta=" + document.getElementById('delta').value + ": delta is the probability of information being accidentally leaked. If delta=0, any output of this database is going to be negligibly different (to the scale of epsilon) from an adjacent database (i.e. with one entry added or removed). If delta is non-zero, it ensures that for all databases X and Y, the absolute privacy loss of a calculation M() will be less than or equal to epsilon with a probability of 1 - delta. If delta is non-zero, we want its value to be smaller than the inverse of any polynomial in the size of the database X (i.e. delta < 1 / ||X||).</p>")
-			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['propWithin'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregateThreshold'] + ".</p>");
+			$("#results").append("<p>Rows that are <span class='below-threshold'>greyed out</span> have less than a " + 100 * data['params']['alpha'] + "% chance of being within " + 100 * data['params']['prop-within'] + "% of the actual value -- i.e. are possibly too noisy to be valuable. With a sensitivity of " + data['params']['sensitivity'] + " and epsilon of " + data['params']['eps'] + ", the minimum DP views has to be " + data['params']['aggregate-threshold'] + ".</p>");
 			if ("Error" in data) {
 				$("#results").append("<br><p>Error: " + data["Error"] + "</p>");
 			}

@@ -90,7 +90,7 @@ func DBConnection() (*sql.DB, error) {
     }
 
     // config stuff — TODO: this might have to go
-    db.SetMaxOpenConns(30)
+    db.SetMaxOpenConns(60)
     // db.SetMaxIdleConns(30)
     db.SetMaxIdleConns(0)
 
@@ -237,7 +237,7 @@ func Query(db *sql.DB, lang string, epsilon, delta float64) ([]TableRow, []Table
     var tbl_name = fmt.Sprintf("output_%s_%s", lang, yesterday)
 
     // create the query -- use the mysql round function to get around the fact that floats are imprecise
-    var query = `SELECT * FROM ` + tbl_name + ` WHERE (Epsilon=-1 AND Delta=-1) OR (ROUND(Epsilon, 1)=ROUND(?, 1) AND ROUND(Delta, 8)=ROUND(?, 8))`
+    var query = `SELECT * FROM ` + tbl_name + ` WHERE (Epsilon=-1 AND Delta=-1) OR (ROUND(Epsilon, 1)=ROUND(?, 1) AND ROUND(Delta, 9)=ROUND(?, 9))`
 
     // set context
     ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
