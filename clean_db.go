@@ -35,5 +35,5 @@ func main() {
 		return
 	}
 
-	log.Printf("Time to clean up all databases: %v seconds\n", lang, time.Now().Sub(start).Seconds())
+	log.Printf("Time to clean up all databases: %v seconds\n", time.Now().Sub(start).Seconds())
 }
