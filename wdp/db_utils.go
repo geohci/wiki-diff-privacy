@@ -11,27 +11,40 @@ import (
 	"time"
 	"fmt"
 	"strings"
-    "github.com/joho/godotenv"
     "os"
+    "bufio"
 )
 
 // gets the DSN based on an input string
 func DSN(dbName string) (string, error) {
-
-    // load .env
-    err := godotenv.Load(".env")
+    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
+    // f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
+    f, err := os.Open("/data/project/diff-privacy-beam/replica.my.cnf") // TOOLFORGE
+    defer f.Close()
     if err != nil {
-        log.Printf("Error %s while loading .env\n", err)
+        fmt.Printf("Error %s when opening replica file", err)
         return "", err
     }
 
-    // get username, pwd, and hostname from env
-    username := os.Getenv("USERNAME")
-    password := os.Getenv("PASSWORD")
-    hostname := os.Getenv("HOSTNAME")
+    scanner := bufio.NewScanner(f)
+
+    scanner.Split(bufio.ScanLines)
+    var username string
+    var password string
+  
+    for scanner.Scan() {
+        str_split := strings.Split(scanner.Text(), " = ")
+        if str_split[0] == "user" {
+            username = str_split[1]
+        } else if str_split[0] == "password" {
+            password = str_split[1]
+        }
+    }
 
     // return DSN
-    return fmt.Sprintf("%s:%s@tcp(%s)/%s", username, password, hostname, dbName), nil
+    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
+    // return fmt.Sprintf("%s:%s@tcp(127.0.0.1)/%s", username, password, dbName), nil // LOCAL
+    return fmt.Sprintf("%s:%s@tcp(tools.db.svc.eqiad.wmflabs)/%s", username, password, dbName), nil // TOOLFORGE
 }
 
 // creates the DB if it doesn't already exist, and returns a connection to the DB
