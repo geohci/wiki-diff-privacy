@@ -59,7 +59,9 @@ func processLanguage(lang string) error {
 	dpMap := make(map[string]beam.PCollection)
 
 	// get the DSN
-	dsn, err := wdp.DSN("wdp")
+	// NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
+	// dsn, err := wdp.DSN("wdp") // LOCAL
+	dsn, err := wdp.DSN("s54717__wdp_p") // TOOLFORGE
 	if err != nil {
 		log.Printf("Error %s when getting dbname\n", err)
 		return err
