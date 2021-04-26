@@ -3,7 +3,7 @@ Description=Privacy on Beam service
 After=syslog.target
 
 [Service]
-ExecStart=/usr/bin/uwsgi --ini /etc/api-endpoint/uwsgi.ini
+ExecStart=/usr/local/go/bin/server
 User=www-data
 Group=www-data
 Restart=always
