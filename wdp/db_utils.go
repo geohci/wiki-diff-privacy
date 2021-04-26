@@ -18,8 +18,9 @@ import (
 // gets the DSN based on an input string
 func DSN(dbName string) (string, error) {
     // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
+    // f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
     // f, err := os.Open("/data/project/diff-privacy-beam/replica.my.cnf") // TOOLFORGE
+    f, err := os.Open("/home/htriedman/replica.my.cnf") // CLOUD VPS
     defer f.Close()
     if err != nil {
         fmt.Printf("Error %s when opening replica file", err)
@@ -43,7 +44,7 @@ func DSN(dbName string) (string, error) {
 
     // return DSN
     // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    return fmt.Sprintf("%s:%s@tcp(127.0.0.1)/%s", username, password, dbName), nil // LOCAL
+    return fmt.Sprintf("%s:%s@tcp(127.0.0.1)/%s", username, password, dbName), nil // LOCAL & CLOUD VPS
     // return fmt.Sprintf("%s:%s@tcp(tools.db.svc.eqiad.wmflabs)/%s", username, password, dbName), nil // TOOLFORGE
 }
 
@@ -71,7 +72,7 @@ func DBConnection() (*sql.DB, error) {
 
     // create DB if not exists
     // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp") // LOCAL
+    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp") // LOCAL & CLOUD VPS
     // res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS s54717__wdp_p") // TOOLFORGE
     if err != nil {
         log.Printf("Error %s when creating DB\n", err)
@@ -92,7 +93,7 @@ func DBConnection() (*sql.DB, error) {
 
     // get DSN again, this time for the specific DB we just made
     // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    dbName, err = DSN("wdp") // LOCAL
+    dbName, err = DSN("wdp") // LOCAL & CLOUD VPS
     // dbName, err = DSN("s54717__wdp_p") // TOOLFORGE
     if err != nil {
     	log.Printf("Error %s when getting dbname\n", err)
