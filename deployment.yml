@@ -23,7 +23,6 @@ spec:
       containers:
         - name: server
           image: docker-registry.tools.wmflabs.org/toolforge-golang-sssd-base:latest
-          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           command: [ "/data/project/diff-privacy-beam/wiki-diff-privacy/bin/server-amd64-linux" ]
