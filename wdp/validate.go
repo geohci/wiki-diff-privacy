@@ -62,7 +62,7 @@ func validateEpsilon(epsilon float64) bool {
 	// make sure that epsilon is a number and it isn't inf
 	if !math.IsInf(epsilon, 1) && !math.IsNaN(epsilon) {
 		// if it equals a valid epsilon, return true
-		for _, e := range Epsilon {
+		for _, e := range Epsilons {
 			if e == epsilon {
 				return true
 			}
@@ -78,7 +78,7 @@ func validateDelta(delta float64) bool {
 	// make sure that delta is a number and it isn't inf
 	if !math.IsInf(delta, 1) && !math.IsNaN(delta) {
 		// if it equals a valid delta, return true
-		for _, d := range Delta {
+		for _, d := range Deltas {
 			if d == delta {
 				log.Print("delta validated")
 				return true
