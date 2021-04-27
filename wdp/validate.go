@@ -24,8 +24,8 @@ import (
 // list of small wikis (<100000 views/day total) to use for running on kube in toolforge
 // var LanguageCodes = []string{"gan", "km", "as", "so", "bo"}
 
-// list of wikipedias ranging in size from 8 million views/day to 20,000 views/day to illustrate effects of size
-var LanguageCodes = []string{"simple", "fa", "uk", "km", "gan"}
+// list of wikipedias ranging in size from 5 million views/day to 20,000 views/day to illustrate effects of size
+var LanguageCodes = []string{"simple", "he", "uk", "km", "gan"}
 
 // various configurations of epsilon and delta to compute the view count per page with
 var Epsilons = []float64{0.1, 0.5, 1, 5}
