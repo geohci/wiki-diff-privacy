@@ -60,7 +60,7 @@ func processLanguage(lang string) error {
 
 	// get the DSN
 	// NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-	dsn, err := wdp.DSN("wdp") // LOCAL
+	dsn, err := wdp.DSN("wdp") // LOCAL & CLOUD VPS
 	// dsn, err := wdp.DSN("s54717__wdp_p") // TOOLFORGE
 	if err != nil {
 		log.Printf("Error %s when getting dbname\n", err)

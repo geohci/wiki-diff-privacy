@@ -59,6 +59,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 // function to call the API
 func PageViews(w http.ResponseWriter, r *http.Request) {
+
 	// enable outside API requests
 	wdp.EnableCors(&w)
 
@@ -78,8 +79,7 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 
 	// feed those into a util function to format them correctly
 	results := wdp.CreateOutputStruct(normalCount, dpCount, vars)
-	log.Printf("qual eps: %d\n", wdp.QualEps(vars.Epsilon, 0.5))
-	log.Printf("aggregation threshold: %d\n", wdp.AggregationThreshold(vars.Sensitivity, vars.Epsilon, vars.Alpha, vars.PropWithin))
+
 
 	// create outward facing parameters
 	var params = outParams{
