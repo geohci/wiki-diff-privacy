@@ -70,7 +70,7 @@
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Language code*</span>
 									<select id="lang" name="lang">
-										{{ range _, $lang := .Langs }}
+										{{ range $i, $lang := .Langs }}
 										<!-- <option value="ar" selected>العربية (Arabic)</option>
 										<option value="nl">Nederlands (Dutch)</option>
 										<option value="pl">Polski (Polish)</option>
@@ -97,7 +97,7 @@
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Epsilon*</span>
 									<select id="eps" name="eps">
-										{{ range _, $eps := .Epsilons }}
+										{{ range $i, $eps := .Epsilons }}
 										<!-- <option value="0.1">0.1</option>
 										<option value="0.5">0.5</option>
 										<option value="1" selected>1</option>
@@ -110,7 +110,7 @@
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Delta*</span>
 									<select id="delta" name="delta">
-										{{ range _, $del := .Deltas }}
+										{{ range $i, $del := .Deltas }}
 										<!-- <option value="0.000000001" selected>10E-9</option>
 										<option value="0.00000001">10E-8</option>
 										<option value="0.0000001">10E-7</option>
