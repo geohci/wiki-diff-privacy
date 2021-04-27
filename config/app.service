@@ -3,7 +3,7 @@ Description=Privacy on Beam service
 After=syslog.target
 
 [Service]
-ExecStart=/usr/local/go/bin/server
+ExecStart=/srv/diff-privacy-beam/server
 User=www-data
 Group=www-data
 Restart=always
