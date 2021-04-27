@@ -63,6 +63,7 @@ cd ${TMP_PATH}/${REPO_LBL}
 /usr/local/go/bin/go build -o ${ETC_PATH}/resources/init_db init_db.go
 /usr/local/go/bin/go build -o ${ETC_PATH}/resources/beam beam.go
 /usr/local/go/bin/go build -o ${ETC_PATH}/resources/clean_db clean_db.go
+cd
 
 # If UI included, consider the following for managing JS dependencies:
 # echo "Installing front-end resources..."
