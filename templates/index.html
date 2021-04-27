@@ -199,11 +199,20 @@
 					}
 					row['Actual Pviews'] = data["results"][article]["gt-views"];
 					row['Actual Rank'] = data["results"][article]["gt-rank"];
-					row['DP Pviews'] = data["results"][article]["dp-views"];
-					row['DP Rank'] = data["results"][article]["dp-rank"];
-					row['Pviews Diff'] = data["results"][article]["dp-views"] - data["results"][article]["gt-views"];
-					row['Rank Diff'] = data["results"][article]["gt-rank"] - data["results"][article]["dp-rank"];
-					row['Aggregate?'] = data["results"][article]["do-aggregate"];
+
+					if ( data["results"][article]["dp-views"] == -1) {
+						row['DP Pviews'] = "No data";
+						row['DP Rank'] = "No data";
+						row['Pviews Diff'] = "No data";
+						row['Rank Diff'] = "No data";
+						row['Aggregate?'] = 1;
+					} else {
+						row['DP Pviews'] = data["results"][article]["dp-views"];
+						row['DP Rank'] = data["results"][article]["dp-rank"];
+						row['Pviews Diff'] = data["results"][article]["dp-views"] - data["results"][article]["gt-views"];
+						row['Rank Diff'] = data["results"][article]["gt-rank"] - data["results"][article]["dp-rank"];
+						row['Aggregate?'] = data["results"][article]["do-aggregate"];
+					}
 					table_data.push(row);
 				}
 				$('#results-table').DataTable( {

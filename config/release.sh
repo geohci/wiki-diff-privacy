@@ -39,3 +39,6 @@ systemctl daemon-reload  # refresh state
 
 systemctl restart app.service  # start up uwsgi
 systemctl restart nginx  # start up nginx
+
+service app start
+nginx -s reload
