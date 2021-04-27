@@ -179,7 +179,7 @@ func privateCountPageViews(s beam.Scope, col beam.PCollection, epsilon, delta fl
 	// privately count the number of times each page shows up in pageviews
 	// yields PrivatePCollection<string,int>
 	counted := pbeam.Count(s, pageviews, pbeam.CountParams{ // defaults to Laplace noise
-		MaxPartitionsContributed: 1, // In the scheme I've constructed, each visitor visits 1x per day
+		MaxPartitionsContributed: 1, // In the scheme I've constructed, each visitor visits 1x per day (on user-level privacy, this would go to 5-10)
 		MaxValue:                 1, // And they can visit a maximum of 1 page
 	})
 

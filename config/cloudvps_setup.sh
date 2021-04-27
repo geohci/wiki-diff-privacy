@@ -5,18 +5,18 @@
 APP_LBL='diff-privacy-beam'  # descriptive label for endpoint-related directories
 REPO_LBL='wiki-diff-privacy'  # directory where repo code will go
 GIT_CLONE_HTTPS='https://github.com/htried/wiki-diff-privacy.git'  # for `git clone`
-MODEL_WGET='https://ndownloader.figshare.com/files/<file-number>'  # model binary -- ndownloader.figshare is a good host
 
 ETC_PATH="/etc/${APP_LBL}"  # app config info, scripts, ML models, etc.
 SRV_PATH="/srv/${APP_LBL}"  # application resources for serving endpoint
 TMP_PATH="/tmp/${APP_LBL}"  # store temporary files created as part of setting up app (cleared with every update)
-LOG_PATH="/var/log/go"  # application log data
-LIB_PATH="/var/lib/${APP_LBL}"  # where virtualenv will sit
+LOG_PATH="/var/log/go"
 
 echo "Updating the system..."
 apt-get update
 # apt-get install -y build-essential  # gcc (c++ compiler) necessary for fasttext
 apt-get install -y nginx  # handles incoming requests, load balances, and passes to uWSGI to be fulfilled
+apt-get install -y default-mysql-server
+
 # apt-get install -y python3-pip  # install dependencies
 # apt-get install -y python3-wheel  # make sure dependencies install correctly even when missing wheels
 # apt-get install -y python3-venv  # for building virtualenv
@@ -38,8 +38,6 @@ mkdir -p ${TMP_PATH}
 mkdir -p ${SRV_PATH}/sock
 mkdir -p ${ETC_PATH}
 mkdir -p ${ETC_PATH}/resources
-mkdir -p ${LOG_PATH}
-mkdir -p ${LIB_PATH}
 
 
 echo "Cloning repositories..."
@@ -59,12 +57,12 @@ echo "Cloning repositories..."
 # With updates, however, the packages could change, leading to unexpected behavior or errors
 git clone ${GIT_CLONE_HTTPS} ${TMP_PATH}/${REPO_LBL}
 
-echo "Setting up Go dependencies..."
+echo "Setting up Go dependencies and building binaries..."
 cd ${TMP_PATH}/${REPO_LBL}
-go build server.go
-go build init_db.go
-go build beam.go
-go build clean_db.go
+/usr/local/go/bin/go build -o ${SRV_PATH}/server server.go
+/usr/local/go/bin/go build -o ${ETC_PATH}/resources/init_db init_db.go
+/usr/local/go/bin/go build -o ${ETC_PATH}/resources/beam beam.go
+/usr/local/go/bin/go build -o ${ETC_PATH}/resources/clean_db clean_db.go
 
 # If UI included, consider the following for managing JS dependencies:
 # echo "Installing front-end resources..."
@@ -82,11 +80,9 @@ go build clean_db.go
 echo "Setting up ownership..."  # makes www-data (how nginx is run) owner + group for all data etc.
 chown -R www-data:www-data ${ETC_PATH}
 chown -R www-data:www-data ${SRV_PATH}
-chown -R www-data:www-data ${LOG_PATH}
-chown -R www-data:www-data ${LIB_PATH}
 
 echo "Copying configuration files..."
-cp ${TMP_PATH}/${REPO_LBL}/model/config/* ${ETC_PATH}
+cp ${TMP_PATH}/${REPO_LBL}/config/* ${ETC_PATH}
 # TODO: fix this to be more elegant (one directory or not necessary because run as package)
 # cp ${TMP_PATH}/${REPO_LBL}/model/wsgi.py ${ETC_PATH}
 # cp ${TMP_PATH}/${REPO_LBL}/model/flask_config.yaml ${ETC_PATH}
