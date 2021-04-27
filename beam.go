@@ -79,8 +79,8 @@ func processLanguage(lang string) error {
 	normalCount := countPageViews(s, pvs)
 
 	// for each (epsilon, delta) tuple
-	for _, eps := range wdp.Epsilon {
-		for _, del := range wdp.Delta {
+	for _, eps := range wdp.Epsilons {
+		for _, del := range wdp.Deltas {
 			// cast them to a string
 			key := strconv.FormatFloat(eps, 'f', -1, 64) + "|" + strconv.FormatFloat(del, 'f', -1, 64)
 

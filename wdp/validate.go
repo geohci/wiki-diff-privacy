@@ -22,17 +22,24 @@ import (
 // var LanguageCodes = []string{"en", "es", "fr", "de", "zh", "ru", "pt", "it", "ar", "ja", "nl", "pl", "tr", "id", "fa"}
 
 // list of small wikis (<100000 views/day total) to use for running on kube in toolforge
-var LanguageCodes = []string{"gan", "km", "as", "so", "bo"}
+// var LanguageCodes = []string{"gan", "km", "as", "so", "bo"}
 
-// test list
-// var LanguageCodes = []string{"ko", "fi"}
+// list of wikipedias ranging in size from 8 million views/day to 20,000 views/day to illustrate effects of size
+var LanguageCodes = []string{"simple", "fa", "uk", "km", "gan"}
+
+// various configurations of epsilon and delta to compute the view count per page with
+var Epsilons = []float64{0.1, 0.5, 1, 5}
+var Deltas = []float64{math.Pow10(-9), math.Pow10(-8), math.Pow10(-7), math.Pow10(-6)}
 
 
 type PageVars struct {
 	Lang 		string
+	Langs 		[]string
 	MinCount 	int 
 	Epsilon		float64
+	Epsilons 	[]float64
 	Delta		float64
+	Deltas		[]float64
 	Sensitivity int
 	Alpha 		float64
 	PropWithin 	float64
@@ -118,10 +125,13 @@ func validatePropWithin(propWithin float64) bool {
 func ValidateApiArgs(r *http.Request) (PageVars, error) {
 	request := r.URL.Query()
 
-	var pvs = PageVars{Lang:			"ar",
+	var pvs = PageVars{Lang:			"simple",
+					   Langs: 			LanguageCodes,
 					   MinCount: 		int(0),
 					   Epsilon: 		float64(1),
+					   Epsilons: 		Epsilons,
 					   Delta: 			float64(0.000001),
+					   Deltas: 			Deltas,
 					   Sensitivity: 	int(1),
 					   Alpha: 			float64(0.5),
 					   PropWithin: 		float64(0.25)}

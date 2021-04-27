@@ -41,20 +41,6 @@ mkdir -p ${ETC_PATH}/resources
 
 
 echo "Cloning repositories..."
-# NOTE: a more stable install would involve building wheels on an identical instance and then the following:
-# NOTE: see (https://gerrit.wikimedia.org/g/research/recommendation-api/wheels/+/refs/heads/master) for an example.
-# git clone https://gerrit.wikimedia.org/r/research/recommendation-api/wheels ${TMP_PATH}/wheels
-# echo "Making wheel files..."
-# cd ${TMP_PATH}/wheels
-# rm -rf wheels/*.whl
-# make
-# git clone ${GIT_CLONE_HTTPS} ${TMP_PATH}/${REPO_LBL}
-# echo "Installing repositories..."
-# pip3 install --no-deps ${TMP_PATH}/wheels/wheels/*.whl
-# pip3 install --no-deps ${TMP_PATH}/recommendation-api
-
-# The simpler process is to just install dependencies per a requirements.txt file
-# With updates, however, the packages could change, leading to unexpected behavior or errors
 git clone ${GIT_CLONE_HTTPS} ${TMP_PATH}/${REPO_LBL}
 
 echo "Setting up Go dependencies and building binaries..."
@@ -84,9 +70,6 @@ chown -R www-data:www-data ${SRV_PATH}
 
 echo "Copying configuration files..."
 cp ${TMP_PATH}/${REPO_LBL}/config/* ${ETC_PATH}
-# TODO: fix this to be more elegant (one directory or not necessary because run as package)
-# cp ${TMP_PATH}/${REPO_LBL}/model/wsgi.py ${ETC_PATH}
-# cp ${TMP_PATH}/${REPO_LBL}/model/flask_config.yaml ${ETC_PATH}
 cp ${ETC_PATH}/app.nginx /etc/nginx/sites-available/app
 if [[ -f "/etc/nginx/sites-enabled/app" ]]; then
     unlink /etc/nginx/sites-enabled/app

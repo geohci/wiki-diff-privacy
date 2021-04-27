@@ -69,7 +69,8 @@
 						<div class="cols cols5">
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Language code*</span>
-									<select id="lang" name="Language">
+									<select id="lang" name="lang">
+										{{ range _, $lang := .Langs }}
 										<!-- <option value="ar" selected>العربية (Arabic)</option>
 										<option value="nl">Nederlands (Dutch)</option>
 										<option value="pl">Polski (Polish)</option>
@@ -82,34 +83,42 @@
 										<option value="cs">Čeština (Czech)</option>
 										<option value="id">Bahasa Indonesia (Indonesian)</option>
 										<option value="ko">한국어 (Korean)</option>
-										<option value="fi">Suomi (Finnish)</option> -->
+										<option value="fi">Suomi (Finnish)</option>
 										<option value="gan">贛語 (Gan)</option>
 										<option value="km">ភាសាខ្មែរ (Khmer)</option>
 										<option value="as">অসমীয়া (Assamese)</option>
 										<option value="so">Soomaali (Somali)</option>
-										<option value="bo">བོད་སྐད (Tibetan)</option>
+										<option value="bo">བོད་སྐད (Tibetan)</option> -->
+											<option value="{{$lang}}">{{$lang}}</option>
+										{{ end }}
 									</select>
 								</label>
 							</div>
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Epsilon*</span>
 									<select id="eps" name="eps">
-										<option value="0.1">0.1</option>
+										{{ range _, $eps := .Epsilons }}
+										<!-- <option value="0.1">0.1</option>
 										<option value="0.5">0.5</option>
 										<option value="1" selected>1</option>
-										<option value="5">5</option>
+										<option value="5">5</option> -->
+											<option value="{{$eps}}">{{$eps}}</option>
+										{{ end }}
 									</select>
 								</label>
 							</div>
 							<div class="col col1">
 								<label class="placeholder"><span class="field_name">Delta*</span>
 									<select id="delta" name="delta">
-										<option value="0.000000001" selected>10E-9</option>
+										{{ range _, $del := .Deltas }}
+										<!-- <option value="0.000000001" selected>10E-9</option>
 										<option value="0.00000001">10E-8</option>
 										<option value="0.0000001">10E-7</option>
 										<option value="0.000001">10E-6</option>
-										<!-- <option value=0.00001>10E-5</option>
+										<option value=0.00001>10E-5</option>
 										<option value=0.0001>10E-4</option> -->
+											<option value="{{$del}}">{{$del}}</option>
+										{{ end }}
 									</select>
 								</label>
 							</div>

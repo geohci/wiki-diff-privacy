@@ -40,10 +40,6 @@ type TableRow struct {
 	Delta 	float64 	// delta used for calculating the number of views (-1 is none)
 }
 
-// various configurations of epsilon and delta to compute the view count per page with
-var Epsilon = []float64{0.1, 0.5, 1, 5}
-var Delta = []float64{math.Pow10(-9), math.Pow10(-8), math.Pow10(-7), math.Pow10(-6)}
-
 // get the top 50 highest-performing articles for a given language lang from
 // yesterday or the day before
 func GetGroundTruth(lang string) ([50]Article, error) {

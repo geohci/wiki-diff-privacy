@@ -12,6 +12,7 @@ TMP_PATH="/tmp/${APP_LBL}"  # store temporary files created as part of setting u
 rm -rf ${TMP_PATH}
 mkdir -p ${TMP_PATH}
 
+echo "Cloning repositories..."
 git clone ${GIT_CLONE_HTTPS} ${TMP_PATH}/${REPO_LBL}
 
 echo "Setting up Go dependencies and building binaries..."
@@ -25,7 +26,6 @@ cd
 # update config / code -- if only changing Python and not nginx/uwsgi code, then much of this can be commented out
 echo "Copying configuration files..."
 cp ${TMP_PATH}/${REPO_LBL}/config/* ${ETC_PATH}
-# TODO: fix this to be more elegant (one directory or not necessary because run as package)
 cp ${ETC_PATH}/app.nginx /etc/nginx/sites-available/app
 if [[ -f "/etc/nginx/sites-enabled/app" ]]; then
     unlink /etc/nginx/sites-enabled/app
