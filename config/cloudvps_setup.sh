@@ -68,6 +68,9 @@ echo "Setting up ownership..."  # makes www-data (how nginx is run) owner + grou
 chown -R www-data:www-data ${ETC_PATH}
 chown -R www-data:www-data ${SRV_PATH}
 
+echo "Copying static files..."
+cp ${TMP_PATH}/${REPO_LBL}/static/* ${ETC_PATH}
+
 echo "Copying configuration files..."
 cp ${TMP_PATH}/${REPO_LBL}/config/* ${ETC_PATH}
 cp ${ETC_PATH}/app.nginx /etc/nginx/sites-available/app
@@ -83,6 +86,3 @@ systemctl daemon-reload  # refresh state
 
 systemctl restart app.service  # start up uwsgi
 systemctl restart nginx  # start up nginx
-
-service app start
-nginx -s reload

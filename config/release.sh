@@ -23,7 +23,9 @@ cd ${TMP_PATH}/${REPO_LBL}
 /usr/local/go/bin/go build -o ${ETC_PATH}/resources/clean_db clean_db.go
 cd
 
-# update config / code -- if only changing Python and not nginx/uwsgi code, then much of this can be commented out
+echo "Copying static files..."
+cp ${TMP_PATH}/${REPO_LBL}/static/* ${ETC_PATH}
+
 echo "Copying configuration files..."
 cp ${TMP_PATH}/${REPO_LBL}/config/* ${ETC_PATH}
 cp ${ETC_PATH}/app.nginx /etc/nginx/sites-available/app
@@ -39,6 +41,3 @@ systemctl daemon-reload  # refresh state
 
 systemctl restart app.service  # start up uwsgi
 systemctl restart nginx  # start up nginx
-
-service app start
-nginx -s reload
