@@ -1,2 +1,4 @@
 data/*
 .env
+config/replica.my.cnf
+config/config.sql
