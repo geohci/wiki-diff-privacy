@@ -80,7 +80,6 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 	// feed those into a util function to format them correctly
 	results := wdp.CreateOutputStruct(normalCount, dpCount, vars)
 
-
 	// create outward facing parameters
 	var params = outParams{
 		Lang: 				vars.Lang,
@@ -97,8 +96,6 @@ func PageViews(w http.ResponseWriter, r *http.Request) {
 		Params: 	params,
 		Results:	results,
 	}
-	// out.Params = params
-	// out.Results = results
 
 	// send the struct back as a json file
 	w.Header().Set("Content-Type", "application/json")

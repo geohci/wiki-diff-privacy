@@ -78,14 +78,14 @@ func main() {
 	log.Printf("Successfully connected to database")
 
 	// create the synthetic data table
-	err = wdp.CreateTableNew(db, "data")
+	err = wdp.CreateTable(db, "data")
 	if err != nil {
 		log.Printf("Create table failed with error %s", err)
 		return
 	}
 
 	// create the output table
-	err = wdp.CreateTableNew(db, "output")
+	err = wdp.CreateTable(db, "output")
 	if err != nil {
 		log.Printf("Create table failed with error %s", err)
 		return
@@ -106,7 +106,7 @@ func main() {
 		}
 
 		// batch insert faux data into the synthetic data table
-		err = wdp.BatchInsertNew(db, "data", yesterday, lang, topFiftyArticles)
+		err = wdp.BatchInsert(db, "data", yesterday, lang, topFiftyArticles)
 
 		log.Printf("Time to init %s rows: %v seconds\n", lang, time.Now().Sub(langStart).Seconds())
 

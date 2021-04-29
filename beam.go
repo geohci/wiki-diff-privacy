@@ -8,11 +8,9 @@ package main
 
 import (
 	"context"
-	// "fmt"
 	"log"
 	"reflect"
 	"strconv"
-	// "strings"
 	"time"
 
 	"github.com/htried/wiki-diff-privacy/wdp"
@@ -71,45 +69,43 @@ func main() {
 	// read in the input from the database
 	pvs := readInput(s, dsn)
 
+	// for each language
 	for _, lang := range wdp.LanguageCodes {
-		// err := processLanguage(pvs, lang)
-		// if err != nil {
-		// 	log.Printf("Error processing language %s\n", err)
-		// 	return
-		// }
 		// make a map that goes from epsilon/delta parameters --> output PCollections
 		dpMap := make(map[string]beam.PCollection)
 
-
+		// filter the initial db to be just that language
 		langBeam := beam.Create(s, lang)
 		filtered := beam.ParDo(s, filterLang, pvs, beam.SideInput{Input: langBeam})
 
+		// set up params that we will write to the output db
 		normalParams := dbParams{
 			Lang: 		lang,
-			Day: 		time.Now().AddDate(0, 0, -2).Format("2006-01-02"), // yesterday
+			Day: 		time.Now().AddDate(0, 0, -1).Format("2006-01-02"), // yesterday
 			Kind: 		"pv",
 			Epsilon: 	float64(-1),
 			Delta: 		float64(-1),
 		}
 
-		// do the normal Beam count
+		// do the normal Beam count, passing in params
 		normalCount := countPageViews(s, filtered, normalParams)
 
 		// for each (epsilon, delta) tuple
 		for _, eps := range wdp.Epsilons {
 			for _, del := range wdp.Deltas {
-				// cast them to a string
+				// cast them to a string as a key
 				key := strconv.FormatFloat(eps, 'f', -1, 64) + "|" + strconv.FormatFloat(del, 'f', -1, 64)
 
+				// set up params that we will write to the output db
 				dpParams := dbParams{
 					Lang: 		lang,
-					Day: 		time.Now().AddDate(0, 0, -2).Format("2006-01-02"), // yesterday
+					Day: 		time.Now().AddDate(0, 0, -1).Format("2006-01-02"), // yesterday
 					Kind: 		"pv",
 					Epsilon: 	eps,
 					Delta: 		del,
 				}
 
-				// map that string to the PCollection you get when you do a DP page count
+				// map that string to the PCollection you get when you do a DP page count, passing in params
 				dpMap[key] = privateCountPageViews(s, filtered, dpParams)
 			}
 		}
@@ -133,51 +129,6 @@ func main() {
 
 	log.Printf("Time to count all languages: %v seconds\n", time.Now().Sub(start).Seconds())
 }
-
-// // create an output db for an individual language
-// func processLanguage(s beam.Scope, col beam.PCollection, lang string) error {
-// 	start := time.Now()
-
-// 	// make a map that goes from epsilon/delta parameters --> output PCollections
-// 	dpMap := make(map[string]beam.PCollection)
-
-
-// 	langBeam := beam.Create(s, lang)
-// 	filtered := beam.Filter(s, filterLang, col, beam.SideInput{Input: langBeam})
-
-// 	// do the normal Beam count
-// 	normalCount := countPageViews(s, filtered)
-
-// 	// for each (epsilon, delta) tuple
-// 	for _, eps := range wdp.Epsilons {
-// 		for _, del := range wdp.Deltas {
-// 			// cast them to a string
-// 			key := strconv.FormatFloat(eps, 'f', -1, 64) + "|" + strconv.FormatFloat(del, 'f', -1, 64)
-
-// 			// map that string to the PCollection you get when you do a DP page count
-// 			dpMap[key] = privateCountPageViews(s, filtered, eps, del)
-// 		}
-// 	}
-
-// 	// get the name of the table from the input language and date
-// 	var yesterday = time.Now().AddDate(0, 0, -1).Format("2006_01_02")
-// 	lang = strings.ReplaceAll(lang, "-", "_")
-
-// 	tbl_name := fmt.Sprintf("output_%s_%s", lang, yesterday)
-
-// 	// write normal count to db
-// 	databaseio.Write(s, "mysql", dsn, tbl_name, []string{}, normalCount)
-
-// 	// for each (epsilon, delta) tuple
-// 	for _, privCount := range dpMap {
-// 		// write that DP count to db
-// 		databaseio.Write(s, "mysql", dsn, tbl_name, []string{}, privCount)
-// 	}
-
-// 	log.Printf("Time to do all counts of language %s: %v seconds\n", lang, time.Now().Sub(start).Seconds())
-
-// 	return nil
-// }
 
 // readInput reads from a database detailing page views in the form
 // of "id, name" and returns a PCollection of pageView structs.
@@ -268,6 +219,7 @@ func extractPage(p pageView) string {
 	return p.Name
 }
 
+// a filter DoFn that emits a pageView if the entry's Lang matches our language
 func filterLang(p pageView, lang string, emit func(pageView)) {
 	if p.Lang == lang {
 		emit(p)

@@ -10,6 +10,7 @@ import (
     "encoding/json"
   	"time"
   	"sort"
+  	"log"
 )
 
 type Article struct {
@@ -120,8 +121,6 @@ func CreateOutputStruct(normalCount, dpCount []TableRow, vars PageVars) map[stri
 		output[art.Name]["dp-views"] = -1
 		output[art.Name]["do-aggregate"] = -1
 	}
-
-	// log.Print(output)
 
 	// for each DP-altered article
 	for i, art := range dpCount {
