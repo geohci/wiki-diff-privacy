@@ -71,24 +71,6 @@
 								<label class="placeholder"><span class="field_name">Language code*</span>
 									<select id="lang" name="lang">
 										{{ range $i, $lang := .Langs }}
-										<!-- <option value="ar" selected>العربية (Arabic)</option>
-										<option value="nl">Nederlands (Dutch)</option>
-										<option value="pl">Polski (Polish)</option>
-										<option value="uk">Українська (Ukrainian)</option>
-										<option value="sv">Svenska (Sweedish)</option>
-										<option value="vi">Tiếng Việt (Vietnamese)</option>
-										<option value="fa">فارسی (Persian)</option>
-										<option value="tr">Türkçe (Turkish)</option>
-										<option value="he">עברית (Hebrew)</option>
-										<option value="cs">Čeština (Czech)</option>
-										<option value="id">Bahasa Indonesia (Indonesian)</option>
-										<option value="ko">한국어 (Korean)</option>
-										<option value="fi">Suomi (Finnish)</option>
-										<option value="gan">贛語 (Gan)</option>
-										<option value="km">ភាសាខ្មែរ (Khmer)</option>
-										<option value="as">অসমীয়া (Assamese)</option>
-										<option value="so">Soomaali (Somali)</option>
-										<option value="bo">བོད་སྐད (Tibetan)</option> -->
 											<option value="{{$lang}}">{{$lang}}</option>
 										{{ end }}
 									</select>
@@ -98,10 +80,6 @@
 								<label class="placeholder"><span class="field_name">Epsilon*</span>
 									<select id="eps" name="eps">
 										{{ range $i, $eps := .Epsilons }}
-										<!-- <option value="0.1">0.1</option>
-										<option value="0.5">0.5</option>
-										<option value="1" selected>1</option>
-										<option value="5">5</option> -->
 											<option value="{{$eps}}">{{$eps}}</option>
 										{{ end }}
 									</select>
@@ -111,12 +89,6 @@
 								<label class="placeholder"><span class="field_name">Delta*</span>
 									<select id="delta" name="delta">
 										{{ range $i, $del := .Deltas }}
-										<!-- <option value="0.000000001" selected>10E-9</option>
-										<option value="0.00000001">10E-8</option>
-										<option value="0.0000001">10E-7</option>
-										<option value="0.000001">10E-6</option>
-										<option value=0.00001>10E-5</option>
-										<option value=0.0001>10E-4</option> -->
 											<option value="{{$del}}">{{$del}}</option>
 										{{ end }}
 									</select>
@@ -249,8 +221,9 @@
 		}
 
 		function queryDiffPrivate() {
-			// var queryUrl = "http://127.0.0.1:8000/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
-			var queryUrl = "https://diff-privacy-beam.wmcloud.org/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			// NOTE: SWITCH BETWEEN RUNNING LOCALLY AND ON CLOUD VPS
+			var queryUrl = "http://127.0.0.1:8000/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
+			// var queryUrl = "https://diff-privacy-beam.wmcloud.org/api/v1/pageviews?lang=" + document.getElementById('lang').value + "&eps=" + document.getElementById('eps').value + "&sensitivity=" + document.getElementById('sensitivity').value;
 			$.ajax(queryUrl, {success: render_results.bind(this),
 							  error: function(jqxmlhr, status, error){console.log(status + ": " + error)}
 							  }

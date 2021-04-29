@@ -18,9 +18,9 @@ import (
 // gets the DSN based on an input string
 func DSN(dbName string) (string, error) {
     // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    // f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
+    f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
     // f, err := os.Open("/data/project/diff-privacy-beam/replica.my.cnf") // TOOLFORGE
-    f, err := os.Open("/home/htriedman/replica.my.cnf") // CLOUD VPS
+    // f, err := os.Open("/home/htriedman/replica.my.cnf") // CLOUD VPS
     defer f.Close()
     if err != nil {
         fmt.Printf("Error %s when opening replica file", err)
@@ -161,6 +161,39 @@ func CreateTable(db *sql.DB, tbl_name string) error {
     return nil
 }
 
+// creates a table with name tbl_name in DB db. Called in init_db.go.
+func CreateTableNew(db *sql.DB, tbl_name string) error {
+    var query string
+
+    // check to make sure tbl_name is right format, then construct query based on type
+    if tbl_name == "data" {
+        query = `CREATE TABLE IF NOT EXISTS data(pv_id INT PRIMARY KEY AUTO_INCREMENT, user_id TEXT, day DATE, lang TEXT, name TEXT)`
+    } else if tbl_name == "output" {
+        query = `CREATE TABLE IF NOT EXISTS output(Name TEXT, Views INT, Lang TEXT, Day DATE, Kind TEXT, Epsilon FLOAT, Delta FLOAT)`
+    } else {
+        return fmt.Errorf("input to create table was not properly formated: %s", tbl_name)
+    }
+
+    // set context
+    ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancelfunc()
+
+    // execute query and check rows affected (should be 0)
+    res, err := db.ExecContext(ctx, query)
+    if err != nil {
+        log.Printf("Error %s when creating product table", err)
+        return err
+    }
+    rows, err := res.RowsAffected()
+    if err != nil {
+        log.Printf("Error %s when getting rows affected", err)
+        return err
+    }
+
+    log.Printf("Rows affected when creating table: %d\n", rows)
+    return nil
+}
+
 // function for inserting faux data for a specific language in batches so as not
 // to overwhelm the limits of mysql for loading data (which is around ~50,000)
 func BatchInsert(db *sql.DB, tbl_name string, topFiftyArticles [50]Article) error {
@@ -207,6 +240,53 @@ func BatchInsert(db *sql.DB, tbl_name string, topFiftyArticles [50]Article) erro
 
     return nil
 }
+
+// function for inserting faux data for a specific language in batches so as not
+// to overwhelm the limits of mysql for loading data (which is around ~50,000 placeholders)
+func BatchInsertNew(db *sql.DB, tbl_name, date, lang string, topFiftyArticles [50]Article) error {
+    // initialize things to insert, batch counter, and query string
+    var inserts []string
+    var params []interface{}
+    batch := 0
+    query := "INSERT INTO " + tbl_name + "(user_id, day, lang, name) VALUES "
+
+    // for each of the top fifty articles
+    for i := 0; i < 50; i++ {
+        // for the number of views that it has
+        for j := 0; j < topFiftyArticles[i].Views; j++ {
+            // append a parameterized variable to the query and the name of the page
+            inserts = append(inserts, "(?, ?, ?, ?)")
+            params = append(params, "a", date, lang, topFiftyArticles[i].Name)
+
+            // increment the batch counter
+            batch++
+
+            // if the batch counter is 10,000 or greater
+            if batch >= 10000 {
+
+                // insert the values into the db
+                err := insert(db, query, inserts, params)
+                if err != nil {
+                    log.Printf("error %s while inserting into table %s", err, tbl_name)
+                }
+
+                // reset everything back to 0/empty list
+                inserts = nil
+                params = nil
+                batch = 0
+            }
+        }
+    }
+
+    // insert whatever is left at the end
+    err := insert(db, query, inserts, params)
+    if err != nil {
+        log.Printf("error %s while inserting", err)
+    }
+
+    return nil
+}
+
 
 
 // The actual workhorse of the inserion process. Safely inserts a set of params
@@ -317,6 +397,51 @@ func DropOldData(db *sql.DB) error {
         	}
         }
     }
+    return nil
+}
+
+// function for systematically dropping the rows of old data from previous days.
+// called in clean_db.go, and should be used after beam.go does aggregating.
+func DropOldDataNew(db *sql.DB, tbl_name, date string) error {
+    if tbl_name != "data" && tbl_name != "output" {
+        return fmt.Errorf("Error: incorrect formatting for table name %s", tbl_name)
+    }
+
+    query := `DELETE FROM ` + tbl_name + ` WHERE day != "` + date + `"`
+
+    log.Printf(query)
+
+    // set context
+    ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancelfunc()
+
+    // execute the row deletion
+    res, err := db.ExecContext(ctx, query)
+    if err != nil {
+        log.Printf("Error %s deleting rows", err)
+        return err
+    }
+
+    // // prepare the query
+    // stmt, err := db.PrepareContext(ctx, query)
+    // if err != nil {
+    //     log.Printf("Error %s when preparing SQL statement", err)
+    //     return err
+    // }
+    // defer stmt.Close()
+
+    // // execute the row deletion
+    // res, err := stmt.ExecContext(ctx, date)
+    // if err != nil {
+    //     log.Printf("Error %s deleting rows", err)
+    //     return err
+    // }
+    rows, err := res.RowsAffected()
+    if err != nil {
+        log.Printf("Error %s when finding rows affected", err)
+        return err
+    }
+    log.Printf("%d pageviews deleted ", rows)
     return nil
 }
 

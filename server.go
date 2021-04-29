@@ -44,8 +44,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	// parse the template at index.html
 	// NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON CLOUD VPS VS LOCALLY
-	// t, err := template.ParseFiles("templates/index.html") // LOCAL
-	t, err := template.ParseFiles("/etc/diff-privacy-beam/index.html") // CLOUD VPS
+	t, err := template.ParseFiles("templates/index.html") // LOCAL
+	// t, err := template.ParseFiles("/etc/diff-privacy-beam/index.html") // CLOUD VPS
 	if err != nil {
 		log.Print("error parsing template index_go.html: ", err)
 	}
