@@ -44,8 +44,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	// parse the template at index.html
 	// NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON CLOUD VPS VS LOCALLY
-	t, err := template.ParseFiles("templates/index.html") // LOCAL
-	// t, err := template.ParseFiles("/etc/diff-privacy-beam/index.html") // CLOUD VPS
+	// t, err := template.ParseFiles("templates/index.html") // LOCAL
+	t, err := template.ParseFiles("/etc/diff-privacy-beam/index.html") // CLOUD VPS
 	if err != nil {
 		log.Print("error parsing template index_go.html: ", err)
 	}
@@ -113,7 +113,5 @@ func main() {
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/api/v1/pageviews", PageViews)
 
-	// NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-	log.Fatal(http.ListenAndServe(":8000", nil)) // LOCAL & CLOUD VPS
-	// log.Fatal(http.ListenAndServe("0.0.0.0:8000", nil)) // TOOLFORGE
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }

@@ -10,7 +10,6 @@ import (
     "encoding/json"
   	"time"
   	"sort"
-  	"log"
 )
 
 type Article struct {

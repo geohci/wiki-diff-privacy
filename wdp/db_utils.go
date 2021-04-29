@@ -17,10 +17,9 @@ import (
 
 // gets the DSN based on an input string
 func DSN(dbName string) (string, error) {
-    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
-    // f, err := os.Open("/data/project/diff-privacy-beam/replica.my.cnf") // TOOLFORGE
-    // f, err := os.Open("/home/htriedman/replica.my.cnf") // CLOUD VPS
+    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON CLOUD VPS VS LOCALLY
+    // f, err := os.Open("/Users/haltriedman/replica.my.cnf") // LOCAL
+    f, err := os.Open("/home/htriedman/replica.my.cnf") // CLOUD VPS
     defer f.Close()
     if err != nil {
         fmt.Printf("Error %s when opening replica file", err)
@@ -43,9 +42,7 @@ func DSN(dbName string) (string, error) {
     }
 
     // return DSN
-    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    return fmt.Sprintf("%s:%s@tcp(127.0.0.1)/%s", username, password, dbName), nil // LOCAL & CLOUD VPS
-    // return fmt.Sprintf("%s:%s@tcp(tools.db.svc.eqiad.wmflabs)/%s", username, password, dbName), nil // TOOLFORGE
+    return fmt.Sprintf("%s:%s@tcp(127.0.0.1)/%s", username, password, dbName), nil
 }
 
 // creates the DB if it doesn't already exist, and returns a connection to the DB
@@ -71,9 +68,7 @@ func DBConnection() (*sql.DB, error) {
     defer cancelfunc()
 
     // create DB if not exists
-    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp") // LOCAL & CLOUD VPS
-    // res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS s54717__wdp_p") // TOOLFORGE
+    res, err := db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS wdp")
     if err != nil {
         log.Printf("Error %s when creating DB\n", err)
         return nil, err
@@ -92,9 +87,7 @@ func DBConnection() (*sql.DB, error) {
     // PART 2: CONNECT TO EXISTING DB
 
     // get DSN again, this time for the specific DB we just made
-    // NOTE: SWITCH WHICH OF THESE STATEMENTS IS COMMENTED OUT TO RUN ON TOOLFORGE VS LOCALLY
-    dbName, err = DSN("wdp") // LOCAL & CLOUD VPS
-    // dbName, err = DSN("s54717__wdp_p") // TOOLFORGE
+    dbName, err = DSN("wdp")
     if err != nil {
     	log.Printf("Error %s when getting dbname\n", err)
     	return nil, err
