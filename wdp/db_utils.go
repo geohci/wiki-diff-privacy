@@ -370,6 +370,60 @@ func Query(db *sql.DB, lang string, epsilon, delta float64) ([]TableRow, []Table
     return normalCount, dpCount, nil
 }
 
+// function to query the database and get back the normal count and a DP count
+// based on the input (epsilon, delta) tuple
+func QueryNew(db *sql.DB, lang string, epsilon, delta float64) ([]TableRow, []TableRow, error) {
+    // set up output structs
+    var normalCount []TableRow
+    var dpCount []TableRow
+
+    // create the query -- use the mysql round function to get around the fact that floats are imprecise
+    // the inner join filters to just the most recent day of data, and lang filters the language
+    // -1 is the code for normal, so we get -1 and the input epsilon and delta
+    var query = `
+        SELECT * FROM output
+        INNER JOIN (
+            SELECT MAX(Day) as max_day
+            FROM output
+        ) sub
+        ON output.Day=sub.max_day
+        WHERE
+            ((Epsilon=-1 AND Delta=-1) OR (ROUND(Epsilon, 1)=ROUND(?, 1) AND ROUND(Delta, 9)=ROUND(?, 9)))
+            AND Lang=?
+            And Kind="pv"
+        `
+
+    // set context
+    ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancelfunc()
+
+    // query the table
+    res, err := db.QueryContext(ctx, query, epsilon, delta, lang)
+    if err != nil {
+        log.Printf("Error %s when conducting query", err)
+        return normalCount, dpCount, err
+    }
+    defer res.Close()
+    
+
+    // iterate through results
+    for res.Next() {
+        var row TableRow
+
+        res.Scan(&row.Name, &row.Views, &row.Epsilon, &row.Delta)
+        // log.Print(row)
+
+        // if epsilon or delta is -1, add to the normal list; otherwise, add to the dpcount list
+        if row.Epsilon == float64(-1) || row.Delta == float64(-1) {
+            normalCount = append(normalCount, row)
+        } else {
+            dpCount = append(dpCount, row)
+        }
+    }
+
+    return normalCount, dpCount, nil
+}
+
 // function for systematically dropping the tables of old data from previous days.
 // called in clean_db.go, and should be used after beam.go does aggregating.
 func DropOldData(db *sql.DB) error {
@@ -409,8 +463,6 @@ func DropOldDataNew(db *sql.DB, tbl_name, date string) error {
 
     query := `DELETE FROM ` + tbl_name + ` WHERE day != "` + date + `"`
 
-    log.Printf(query)
-
     // set context
     ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancelfunc()
@@ -422,20 +474,6 @@ func DropOldDataNew(db *sql.DB, tbl_name, date string) error {
         return err
     }
 
-    // // prepare the query
-    // stmt, err := db.PrepareContext(ctx, query)
-    // if err != nil {
-    //     log.Printf("Error %s when preparing SQL statement", err)
-    //     return err
-    // }
-    // defer stmt.Close()
-
-    // // execute the row deletion
-    // res, err := stmt.ExecContext(ctx, date)
-    // if err != nil {
-    //     log.Printf("Error %s deleting rows", err)
-    //     return err
-    // }
     rows, err := res.RowsAffected()
     if err != nil {
         log.Printf("Error %s when finding rows affected", err)
